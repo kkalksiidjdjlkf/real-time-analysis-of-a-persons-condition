@@ -1,0 +1,12 @@
+.venv/
+venv/
+*.pt
+*.pyc
+__pycache__/
+models/
+*.safetensors
+*.bin
+*.onnx
+*.onnx.data
+packages/
+*.db

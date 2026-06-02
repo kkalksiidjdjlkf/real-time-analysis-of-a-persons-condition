@@ -1,0 +1,2849 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <title>SPECTRA AI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #667eea; --secondary: #764ba2; --success: #48bb78;
+            --danger: #f56565; --warning: #ed8936; --info: #4299e1;
+            --light: #f7fafc; --dark: #2d3748; --border: #e2e8f0;
+            --text: #2d3748; --text-light: #718096;
+            --card-radius: 16px;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.1);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; color: var(--text); padding: 12px;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: white; border-radius: var(--card-radius); padding: 18px 24px; margin-bottom: 16px; box-shadow: var(--shadow-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .header h1 { font-size: 24px; color: var(--primary); display: flex; align-items: center; gap: 10px; letter-spacing: -0.3px; }
+        .status-indicator { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--light); border-radius: 10px; font-size: 13px; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; }
+        .status-dot.connected { background: var(--success); animation: pulse 2s infinite; }
+        .status-dot.error { background: var(--danger); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .nav-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .nav-tab { padding: 10px 22px; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border: none; border-radius: 10px; cursor: pointer; font-weight: 600; color: var(--text-light); transition: all 0.25s ease; box-shadow: var(--shadow-sm); font-size: 14px; }
+        .nav-tab:hover { background: white; color: var(--primary); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .nav-tab.active { background: var(--primary); color: white; box-shadow: 0 5px 20px rgba(102,126,234,0.4); transform: translateY(-1px); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px; }
+        /* People section styles */
+        .people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-top: 16px; }
+        .person-card { background: white; border-radius: var(--card-radius); padding: 16px; box-shadow: var(--shadow-md); text-align: center; transition: transform 0.25s ease, box-shadow 0.25s ease; position: relative; }
+        .person-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+        .person-card img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 10px; }
+        .person-card .person-name { font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 4px; }
+        .person-card .person-date { font-size: 12px; color: var(--text-light); }
+        .person-card .person-delete { position: absolute; top: 8px; right: 8px; background: rgba(245,101,101,0.1); border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; color: var(--danger); font-size: 14px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .person-card .person-delete:hover { background: var(--danger); color: white; }
+        .person-placeholder { width: 90px; height: 90px; border-radius: 50%; background: var(--light); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; border: 3px dashed var(--border); font-size: 36px; color: var(--text-light); }
+        .scan-progress { width: 100%; height: 6px; background: var(--light); border-radius: 3px; margin-top: 12px; overflow: hidden; }
+        .scan-progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--success)); border-radius: 3px; transition: width 0.3s ease; }
+        .recognized-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(72,187,120,0.15); border: 1px solid var(--success); border-radius: 20px; font-size: 13px; font-weight: 600; color: var(--success); }
+        .card { background: white; border-radius: var(--card-radius); padding: 20px; box-shadow: var(--shadow-md); transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+        .card h3 { font-size: 14px; color: var(--text-light); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+        .card-value { font-size: 30px; font-weight: 700; color: var(--primary); margin-bottom: 6px; letter-spacing: -0.5px; }
+        .card-subtitle { font-size: 12px; color: var(--text-light); }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .monitor-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        @media (max-width: 900px) {
+            .monitor-container { grid-template-columns: 1fr; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .grid { grid-template-columns: 1fr 1fr !important; }
+            .dash-detail-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+            .grid { grid-template-columns: 1fr !important; }
+            .rt-metrics { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important; }
+            body { padding: 8px; }
+        }
+        .video-box { background: #1a1a2e; border-radius: var(--card-radius); overflow: hidden; position: relative; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md); }
+        .video-box video { width: 100%; height: 100%; object-fit: cover; border-radius: var(--card-radius); }
+        .video-box canvas#overlayCanvas { border-radius: var(--card-radius); }
+        .video-placeholder { color: #666; text-align: center; padding: 40px; }
+        .video-placeholder i { font-size: 56px; margin-bottom: 15px; display: block; color: #555; }
+        .audio-box { background: white; border-radius: var(--card-radius); padding: 20px; box-shadow: var(--shadow-md); }
+        .audio-bar-container { height: 16px; background: var(--light); border-radius: 8px; overflow: hidden; margin: 10px 0; }
+        .audio-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--success), var(--warning), var(--danger)); border-radius: 8px; transition: width 0.15s ease; }
+        .monitor-controls { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .btn { padding: 11px 22px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.25s ease; display: inline-flex; align-items: center; gap: 8px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-start { background: var(--success); color: white; }
+        .btn-start:hover:not(:disabled) { background: #38a169; box-shadow: 0 5px 15px rgba(72,187,120,0.4); transform: translateY(-1px); }
+        .btn-stop { background: var(--danger); color: white; }
+        .btn-stop:hover:not(:disabled) { background: #e53e3e; box-shadow: 0 5px 15px rgba(245,101,101,0.4); transform: translateY(-1px); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover:not(:disabled) { background: #5568d3; transform: translateY(-1px); }
+        .btn-secondary { background: var(--light); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--border); transform: translateY(-1px); }
+        .rt-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+        .rt-metric { background: var(--light); border-radius: 10px; padding: 12px 10px; text-align: center; transition: background 0.2s ease; }
+        .rt-metric:hover { background: #edf2f7; }
+        .rt-metric .label { font-size: 11px; color: var(--text-light); margin-bottom: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.2px; }
+        .rt-metric .value { font-size: 20px; font-weight: 700; color: var(--primary); transition: color 0.3s ease; }
+        .rt-metric .value.good { color: var(--success); }
+        .rt-metric .value.warning { color: var(--warning); }
+        .rt-metric .value.bad { color: var(--danger); }
+        .perm-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .perm-overlay.hidden { display: none; }
+        .perm-card { background: white; border-radius: 20px; padding: 40px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .perm-card h2 { font-size: 20px; margin-bottom: 15px; color: var(--text); }
+        .perm-card p { color: var(--text-light); margin-bottom: 25px; line-height: 1.6; font-size: 14px; }
+        .perm-card .icons { font-size: 48px; margin-bottom: 20px; color: var(--primary); }
+        .perm-card .icons i { margin: 0 10px; }
+        .perm-status { margin-top: 15px; font-size: 14px; }
+        .perm-status .granted { color: var(--success); }
+        .perm-status .denied { color: var(--danger); }
+        .session-list { background: white; border-radius: var(--card-radius); padding: 16px; box-shadow: var(--shadow-md); }
+        .session-item { padding: 16px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.25s ease; }
+        .session-item:hover { background: var(--light); border-color: var(--primary); transform: translateX(4px); box-shadow: var(--shadow-sm); }
+        .session-item:last-child { margin-bottom: 0; }
+        .session-info h4 { margin-bottom: 5px; }
+        .session-info p { font-size: 13px; color: var(--text-light); }
+        .session-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+        .badge-completed { background: rgba(72,187,120,0.1); color: var(--success); }
+        .badge-active { background: rgba(66,153,225,0.1); color: var(--info); animation: pulse 2s infinite; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .modal.show { display: flex; animation: fadeIn 0.25s ease; }
+        .modal-content { background: white; border-radius: var(--card-radius); padding: 28px; max-width: 720px; max-height: 85vh; overflow-y: auto; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+        .modal-content::-webkit-scrollbar { width: 6px; }
+        .modal-content::-webkit-scrollbar-track { background: transparent; }
+        .modal-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .modal-close { float: right; font-size: 24px; cursor: pointer; color: var(--text-light); transition: color 0.2s, transform 0.2s; }
+        .modal-close:hover { color: var(--text); transform: scale(1.15); }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-light); }
+        .form-input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s; }
+        .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(102,126,234,0.12); }
+        .log-container { background: #1a1a2e; border-radius: 12px; padding: 15px; max-height: 180px; overflow-y: auto; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #aaa; }
+        .log-container::-webkit-scrollbar { width: 5px; }
+        .log-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+        .log-entry { padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .log-entry.info { color: var(--info); }
+        .log-entry.success { color: var(--success); }
+        .log-entry.warning { color: var(--warning); }
+        .log-entry.error { color: var(--danger); }
+        .chart-container { background: white; border-radius: var(--card-radius); padding: 20px; box-shadow: var(--shadow-md); margin-bottom: 16px; position: relative; min-height: 260px; max-height: 380px; overflow: hidden; }
+        .chart-container canvas { max-height: 320px !important; }
+        .chart-title { font-size: 16px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+        .timer { font-size: 22px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+        .dash-detail-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+    </style>
+<style>.lang-selector-wrapper{display:flex;align-items:center;gap:8px;}.lang-selector{padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);font-family:inherit;}.lang-selector:hover{background:var(--light);}</style></head>
+<body>
+<!-- Permission Request Overlay -->
+<div id="permOverlay" class="perm-overlay">
+    <div class="perm-card">
+        <div class="icons">
+            <i class="fas fa-camera"></i>
+            <i class="fas fa-microphone"></i>
+        </div>
+        <h2>Разрешите доступ к камере и микрофону</h2>
+        <p>
+            Для анализа вашего состояния приложению нужен доступ к камере (анализ лица, усталости)
+            и микрофону (анализ голоса, уровня стресса).
+            <br><br>
+            Данные обрабатываются локально и не отправляются третьим лицам.
+        </p>
+        <button class="btn btn-primary" id="grantPermBtn" onclick="requestPermissions()">
+            <i class="fas fa-check"></i> Разрешить доступ
+        </button>
+        <button class="btn btn-secondary" style="margin-left:10px" onclick="skipPermissions()">
+            Пропустить
+        </button>
+        <div class="perm-status" id="permStatus"></div>
+    </div>
+</div>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-heartbeat"></i> SPECTRA AI</h1>
+        <div class="status-indicator">
+            <div class="status-dot" id="statusDot"></div><div class="lang-selector-wrapper"><select class="lang-selector" id="langSelector" onchange="changeLanguage(this.value)"><option value="en">🇺🇸 English</option><option value="ru" selected>🇷🇺 Русский</option><option value="ko">🇰🇷 한국어</option></select></div>
+            <span id="statusText">Подключение...</span>
+        </div>
+    </div>
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showSection('monitor', this)">
+            <i class="fas fa-play-circle"></i> Мониторинг
+        </button>
+        <button class="nav-tab" onclick="showSection('dashboard', this)">
+            <i class="fas fa-chart-line"></i> Дашборд
+        </button>
+        <button class="nav-tab" onclick="showSection('sessions', this)">
+            <i class="fas fa-list"></i> Сессии
+        </button>
+        <button class="nav-tab" onclick="showSection('people', this)">
+            <i class="fas fa-user-friends"></i> Люди
+        </button>
+        <button class="nav-tab" onclick="showSection('settings', this)">
+            <i class="fas fa-cog"></i> Настройки
+        </button>
+    </div>
+    <!-- ======== MONITOR ======== -->
+    <div id="monitor" class="section active">
+        <div class="monitor-controls">
+            <button class="btn btn-start" id="btnStart" onclick="startMonitoring()" disabled>
+                <i class="fas fa-play"></i> Начать мониторинг
+            </button>
+            <button class="btn btn-stop" id="btnStop" onclick="stopMonitoring()" disabled>
+                <i class="fas fa-stop"></i> Остановить
+            </button>
+            <div style="display:flex;align-items:center;gap:10px;margin-left:10px;">
+                <i class="fas fa-camera" style="color:white;"></i>
+                <select id="cameraSelect" onchange="switchCamera()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:13px;background:white;cursor:pointer;max-width:200px;">
+                    <option value="">Загрузка...</option>
+                </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+                <span id="cyclePhaseLabel" style="color:white;font-size:13px;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,0.15);display:none;"></span>
+                <span style="color:white;font-size:14px;">Время:</span>
+                <span class="timer" id="timerDisplay" style="color:white;">00:00</span>
+            </div>
+        </div>
+        <div class="monitor-container">
+            <div class="video-box" id="videoBox">
+                <div class="video-placeholder" id="videoPlaceholder">
+                    <i class="fas fa-video-slash"></i>
+                    <p>Камера не активна</p>
+                    <p style="font-size:13px;margin-top:8px;">Нажмите «Начать мониторинг»</p>
+                </div>
+                <video id="videoEl" autoplay playsinline muted style="display:none;"></video>
+                <canvas id="overlayCanvas" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
+            </div>
+            <div>
+                <div class="audio-box" style="margin-bottom:20px;">
+                    <h3 style="margin-bottom:10px;"><i class="fas fa-microphone"></i> Уровень звука</h3>
+                    <div class="audio-bar-container">
+                        <div class="audio-bar" id="audioBar"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-light);">
+                        <span>Тихо</span>
+                        <span id="audioLevelText">0%</span>
+                        <span>Громко</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-chart-area"></i> Анализ в реальном времени</h3>
+                    <div class="rt-metrics">
+                        <div class="rt-metric">
+                            <div class="label">Лицо</div>
+                            <div class="value" id="rtFace">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">👥 Людей</div>
+                            <div class="value" id="rtPeopleCount">0</div>
+                        </div>
+                        <div class="rt-metric" style="border-left:2px solid var(--success);">
+                            <div class="label">🧑 Кто это</div>
+                            <div class="value" id="rtRecognizedPerson" style="font-size:15px;">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Усталость</div>
+                            <div class="value" id="rtFatigue">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Глаза</div>
+                            <div class="value" id="rtEyes">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Моргания</div>
+                            <div class="value" id="rtBlinks">0</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Голос</div>
+                            <div class="value" id="rtVoice">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Стресс</div>
+                            <div class="value" id="rtStress">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Контакт глаз</div>
+                            <div class="value" id="rtEyeContact">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Улыбка</div>
+                            <div class="value" id="rtSmile">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Грусть</div>
+                            <div class="value" id="rtSad">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Злость</div>
+                            <div class="value" id="rtAngry">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Чёткость речи</div>
+                            <div class="value" id="rtVoiceClarity">—</div>
+                        </div>
+                        <div class="rt-metric">
+                            <div class="label">Темп речи</div>
+                            <div class="value" id="rtSpeechRate">—</div>
+                        </div>
+                        <div class="rt-metric" style="border-left:2px solid #f56565;">
+                            <div class="label">💓 Пульс</div>
+                            <div class="value" id="rtHeartRate">—</div>
+                        </div>
+                        <div class="rt-metric" style="border-left:2px solid #4299e1;">
+                            <div class="label">🫁 Дыхание</div>
+                            <div class="value" id="rtRespRate">—</div>
+                        </div>
+                        <div class="rt-metric" style="border-left:2px solid #48bb78;">
+                            <div class="label">🩺 Кожа</div>
+                            <div class="value" id="rtSkinStatus">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Per-person metrics panel -->
+        <div class="card" id="personsPanel" style="display:none;">
+            <h3><i class="fas fa-users"></i> Метрики по людям</h3>
+            <div id="personsMetrics" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:10px;"></div>
+        </div>
+        <!-- Health Alert Banner (integrated) -->
+        <div id="healthAlertBanner" style="display:none;background:#f56565;color:white;padding:15px 20px;border-radius:12px;margin-bottom:20px;font-weight:600;font-size:16px;text-align:center;">
+            <i class="fas fa-exclamation-triangle"></i> <span id="healthAlertText"></span>
+        </div>
+
+        <!-- Skin Analysis (integrated into monitoring) -->
+        <div class="card" id="skinAnalysisCard" style="margin-bottom:20px;display:none;">
+            <h3><i class="fas fa-palette" style="color:var(--primary);"></i> Анализ кожи / Тері талдауы (DOC.FAI.ME)</h3>
+            <div class="rt-metrics" style="margin-top:15px;">
+                <div class="rt-metric">
+                    <div class="label">Бледность</div>
+                    <div class="value" id="skinPallor">0%</div>
+                    <div style="height:4px;background:#e2e8f0;border-radius:2px;margin-top:6px;"><div id="skinPallorBar" style="height:100%;background:var(--info);border-radius:2px;width:0%;transition:width 0.5s;"></div></div>
+                </div>
+                <div class="rt-metric">
+                    <div class="label">Желтуха</div>
+                    <div class="value" id="skinJaundice">0%</div>
+                    <div style="height:4px;background:#e2e8f0;border-radius:2px;margin-top:6px;"><div id="skinJaundiceBar" style="height:100%;background:#ed8936;border-radius:2px;width:0%;transition:width 0.5s;"></div></div>
+                </div>
+                <div class="rt-metric">
+                    <div class="label">Цианоз</div>
+                    <div class="value" id="skinCyanosis">0%</div>
+                    <div style="height:4px;background:#e2e8f0;border-radius:2px;margin-top:6px;"><div id="skinCyanosisBar" style="height:100%;background:#4299e1;border-radius:2px;width:0%;transition:width 0.5s;"></div></div>
+                </div>
+                <div class="rt-metric">
+                    <div class="label">Покраснение</div>
+                    <div class="value" id="skinRedness">0%</div>
+                    <div style="height:4px;background:#e2e8f0;border-radius:2px;margin-top:6px;"><div id="skinRednessBar" style="height:100%;background:#f56565;border-radius:2px;width:0%;transition:width 0.5s;"></div></div>
+                </div>
+                <div class="rt-metric">
+                    <div class="label">Сыпь</div>
+                    <div class="value" id="skinRash">0%</div>
+                    <div style="height:4px;background:#e2e8f0;border-radius:2px;margin-top:6px;"><div id="skinRashBar" style="height:100%;background:#e53e3e;border-radius:2px;width:0%;transition:width 0.5s;"></div></div>
+                </div>
+                <div class="rt-metric">
+                    <div class="label">Сухость</div>
+                    <div class="value" id="skinDryness">0%</div>
+                    <div style="height:4px;background:#e2e8f0;border-radius:2px;margin-top:6px;"><div id="skinDrynessBar" style="height:100%;background:#a0aec0;border-radius:2px;width:0%;transition:width 0.5s;"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detected Health Conditions (integrated) -->
+        <div class="card" id="conditionsCard" style="margin-bottom:20px;display:none;">
+            <h3><i class="fas fa-stethoscope" style="color:var(--warning);"></i> Обнаруженные состояния</h3>
+            <div id="detectedConditions" style="margin-top:15px;">
+                <p style="color:var(--text-light);font-style:italic;">Ожидание данных...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-terminal"></i> Лог событий</h3>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry info">Система готова. Нажмите «Начать мониторинг».</div>
+            </div>
+        </div>
+    </div>
+    <!-- ======== DASHBOARD ======== -->
+    <div id="dashboard" class="section">
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div class="card" style="border-left:4px solid var(--primary);">
+                <h3><i class="fas fa-calendar-check" style="color:var(--primary);"></i> Сессии</h3>
+                <div class="card-value" id="dashSessions">0</div>
+                <div class="card-subtitle">Всего сессий</div>
+            </div>
+            <div class="card" style="border-left:4px solid var(--warning);">
+                <h3><i class="fas fa-brain" style="color:var(--warning);"></i> Усталость</h3>
+                <div class="card-value" id="dashFatigue">—</div>
+                <div class="card-subtitle">Среднее за 10 сессий</div>
+            </div>
+            <div class="card" style="border-left:4px solid var(--danger);">
+                <h3><i class="fas fa-heartbeat" style="color:var(--danger);"></i> Стресс</h3>
+                <div class="card-value" id="dashStress">—</div>
+                <div class="card-subtitle">Среднее за 10 сессий</div>
+            </div>
+            <div class="card" style="border-left:4px solid var(--success);">
+                <h3><i class="fas fa-clock" style="color:var(--success);"></i> Посл. сессия</h3>
+                <div class="card-value" id="dashLast" style="font-size:16px;">—</div>
+                <div class="card-subtitle">Дата и время</div>
+            </div>
+        </div>
+        <div class="dash-detail-grid">
+            <div class="card">
+                <h3><i class="fas fa-video" style="color:var(--primary);"></i> Результаты лица</h3>
+                <div id="dashFaceDetail" style="color:var(--text-light);font-size:14px;">Нет данных</div>
+            </div>
+            <div class="card">
+                <h3><i class="fas fa-microphone" style="color:var(--secondary);"></i> Результаты голоса</h3>
+                <div id="dashVoiceDetail" style="color:var(--text-light);font-size:14px;">Нет данных</div>
+            </div>
+            <div class="card">
+                <h3><i class="fas fa-heartbeat" style="color:var(--danger);"></i> Здоровье (DOC.FAI.ME)</h3>
+                <div id="dashHealthDetail" style="color:var(--text-light);font-size:14px;">Нет данных</div>
+            </div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">Сессии за последние 7 дней</div>
+            <canvas id="dashChart"></canvas>
+        </div>
+    </div>
+    <!-- ======== SESSIONS ======== -->
+    <div id="sessions" class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h2 style="color:white;">История сессий</h2>
+            <button class="btn btn-primary" onclick="loadSessions()">
+                <i class="fas fa-sync"></i> Обновить
+            </button>
+        </div>
+        <div class="session-list" id="sessionsList">
+            <div style="text-align:center;padding:40px;color:var(--text-light);">
+                <i class="fas fa-folder-open" style="font-size:48px;display:block;margin-bottom:15px;"></i>
+                Нет сессий. Начните мониторинг.
+            </div>
+        </div>
+    </div>
+    <!-- ======== PEOPLE (Face Recognition) ======== -->
+    <div id="people" class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+            <h2 style="color:white;"><i class="fas fa-user-friends"></i> Распознавание лиц</h2>
+            <div style="display:flex;gap:10px;">
+                <button class="btn btn-primary" onclick="openAddPersonModal()">
+                    <i class="fas fa-user-plus"></i> Добавить человека
+                </button>
+                <button class="btn btn-secondary" onclick="loadPeople()">
+                    <i class="fas fa-sync"></i> Обновить
+                </button>
+            </div>
+        </div>
+        <div class="card" style="margin-bottom:16px;">
+            <h3><i class="fas fa-info-circle" style="color:var(--primary);"></i> Как это работает</h3>
+            <p style="color:var(--text-light);font-size:14px;margin-top:8px;line-height:1.6;">
+                Добавьте людей, чтобы система запоминала их лица. Во время мониторинга система будет
+                автоматически распознавать зарегистрированных людей и показывать их имена на видео.
+                <br>Для добавления нажмите <b>«Добавить человека»</b>, введите имя и покажите лицо в камеру.
+            </p>
+        </div>
+        <div id="peopleCount" style="color:white;font-size:14px;margin-bottom:12px;"></div>
+        <div class="people-grid" id="peopleGrid">
+            <div style="grid-column:1/-1;text-align:center;padding:40px;color:white;opacity:0.7;">
+                <i class="fas fa-users" style="font-size:48px;display:block;margin-bottom:15px;"></i>
+                Нет зарегистрированных лиц. Нажмите «Добавить человека».
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Person Modal -->
+    <div id="addPersonModal" class="modal">
+        <div class="modal-content" style="max-width:520px;">
+            <span class="modal-close" onclick="closeAddPersonModal()">&times;</span>
+            <h2 style="margin-bottom:20px;color:var(--primary);">
+                <i class="fas fa-user-plus"></i> Добавить человека
+            </h2>
+            <div class="form-group">
+                <label class="form-label">Имя</label>
+                <input type="text" id="personNameInput" class="form-input" placeholder="Введите имя человека" autocomplete="off">
+            </div>
+            <div style="position:relative;background:#1a1a2e;border-radius:12px;overflow:hidden;aspect-ratio:4/3;margin-bottom:16px;">
+                <video id="scanVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;border-radius:12px;"></video>
+                <div id="scanOverlay" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                    <div style="width:180px;height:180px;border:3px dashed rgba(255,255,255,0.4);border-radius:50%;"></div>
+                </div>
+                <div id="scanStatus" style="position:absolute;bottom:12px;left:12px;right:12px;text-align:center;color:white;font-size:14px;background:rgba(0,0,0,0.6);padding:8px;border-radius:8px;">
+                    Расположите лицо в центре круга
+                </div>
+            </div>
+            <div class="scan-progress" id="scanProgressContainer" style="display:none;">
+                <div class="scan-progress-bar" id="scanProgressBar" style="width:0%;"></div>
+            </div>
+            <div id="scanResult" style="margin-top:12px;display:none;"></div>
+            <div style="display:flex;gap:10px;margin-top:16px;">
+                <button class="btn btn-primary" id="btnScanFace" onclick="scanAndRegisterFace()" style="flex:1;">
+                    <i class="fas fa-camera"></i> Сканировать лицо
+                </button>
+                <button class="btn btn-secondary" onclick="closeAddPersonModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== SETTINGS ======== -->
+    <div id="settings" class="section">
+        <h2 style="color:white;margin-bottom:20px;">Настройки</h2>
+        <div class="card">
+            <h3>API Сервер</h3>
+            <div class="form-group">
+                <label class="form-label">URL API</label>
+                <input type="text" id="apiUrlInput" class="form-input" placeholder="http://localhost:5000">
+            </div>
+            <button class="btn btn-primary" onclick="saveSettings()">
+                <i class="fas fa-save"></i> Сохранить
+            </button>
+            <button class="btn btn-secondary" style="margin-left:10px;" onclick="testConnection()">
+                <i class="fas fa-plug"></i> Проверить
+            </button>
+            <h3 style="margin-top:30px;">Камера и микрофон</h3>
+            <p style="color:var(--text-light);font-size:14px;margin-bottom:10px;">
+                Камера: <strong id="camStatus">не проверено</strong><br>
+                Микрофон: <strong id="micStatus">не проверено</strong>
+            </p>
+            <button class="btn btn-primary" onclick="requestPermissions()">
+                <i class="fas fa-shield-alt"></i> Перезапросить разрешения
+            </button>
+            <h3 style="margin-top:30px;">Данные</h3>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="exportAllData()">
+                    <i class="fas fa-download"></i> Экспорт данных
+                </button>
+                <button class="btn btn-secondary" onclick="clearAllData()">
+                    <i class="fas fa-trash"></i> Очистить данные
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div id="sessionModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <div id="sessionDetails"></div>
+    </div>
+</div>
+<canvas id="captureCanvas" style="display:none;"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+// ====== SPECTRA AI Dashboard JS ======
+let timer = null;
+let timerSeconds = 0;
+function updateTimerDisplay() {
+    const el = document.getElementById('timerDisplay');
+    if (el) {
+        const min = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+        const sec = String(timerSeconds % 60).padStart(2, '0');
+        el.textContent = `${min}:${sec}`;
+    }
+}
+
+function startTimer(duration, onEnd) {
+    timerSeconds = duration;
+    updateTimerDisplay();
+    if (timer) clearInterval(timer);
+    timer = setInterval(() => {
+        timerSeconds--;
+        updateTimerDisplay();
+        if (timerSeconds <= 0) {
+            clearInterval(timer);
+            timer = null;
+            if (typeof onEnd === 'function') onEnd();
+        }
+    }, 1000);
+}
+
+function stopTimer() {
+    if (timer) clearInterval(timer);
+    timer = null;
+}
+
+function loadSessions() {
+    const apiUrl = getApiUrl();
+    const url = apiUrl + '/api/sessions/recent';
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById('sessionsList');
+            if (!Array.isArray(data) || data.length === 0) {
+                list.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-light);"><i class="fas fa-folder-open" style="font-size:48px;display:block;margin-bottom:15px;"></i>Нет сессий. Начните мониторинг.</div>`;
+                return;
+            }
+            const emotionRu = {'Happy':'😊 Счастье','Neutral':'😐 Спокойствие','Sad':'😢 Грусть','Angry':'😡 Злость','Surprise':'😮 Удивление','Disgust':'🤢 Отвращение','Fear':'😨 Страх','Contempt':'😏 Презрение','Tired':'😴 Усталость','None':'—'};
+
+            // Fetch health data for each session
+            const healthPromises = data.map(sess =>
+                fetch(apiUrl + '/api/health/symptoms/' + sess.id).then(r => r.json()).catch(() => null)
+            );
+            Promise.all(healthPromises).then(healthResults => {
+
+            list.innerHTML = data.map((sess, idx) => {
+                const st = sess.stats || {};
+                const health = healthResults[idx];
+                // Duration
+                let dur = '';
+                if (sess.start_time && sess.end_time) {
+                    const ms = new Date(sess.end_time) - new Date(sess.start_time);
+                    const mins = Math.floor(ms / 60000);
+                    const secs = Math.floor((ms % 60000) / 1000);
+                    dur = mins + ':' + String(secs).padStart(2,'0');
+                } else if (sess.duration_seconds) {
+                    const mins = Math.floor(sess.duration_seconds / 60);
+                    const secs = sess.duration_seconds % 60;
+                    dur = mins + ':' + String(secs).padStart(2,'0');
+                }
+                // Fatigue
+                const fatigue = st.avg_fatigue !== null && st.avg_fatigue !== undefined ? Math.round(st.avg_fatigue * 100) : null;
+                const fatigueColor = fatigue !== null ? (fatigue < 30 ? 'var(--success)' : fatigue < 60 ? 'var(--warning)' : 'var(--danger)') : 'var(--text-light)';
+                // Stress
+                const stress = st.avg_stress !== null && st.avg_stress !== undefined ? Math.round(st.avg_stress * 100) : null;
+                const stressColor = stress !== null ? (stress < 30 ? 'var(--success)' : stress < 60 ? 'var(--warning)' : 'var(--danger)') : 'var(--text-light)';
+                // Eye contact
+                const eyeContact = st.face_count > 0 && st.face_detected_count !== null ? Math.round(st.face_detected_count / st.face_count * 100) : null;
+                // Dominant emotion
+                const domEm = st.dominant_emotion ? (emotionRu[st.dominant_emotion] || st.dominant_emotion) : null;
+                // Blinks
+                const blinks = st.total_blinks !== null && st.total_blinks !== undefined ? Math.round(st.total_blinks) : null;
+
+                // Health badges (per-person)
+                let healthBadges = '';
+                if (health) {
+                    const personCount = health.person_count || 0;
+                    const healthPersons = health.persons || [];
+                    
+                    if (personCount > 1) {
+                        healthBadges += '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(102,126,234,0.1);"><i class="fas fa-users"></i> <b>'+personCount+' чел.</b> здоровье</span>';
+                    }
+
+                    // Show main person's vitals or aggregate
+                    const lv = health.latest_vital_signs || {};
+                    const hrVal = lv.estimated_heart_rate || 0;
+                    const respVal = lv.estimated_resp_rate || 0;
+                    if (hrVal > 0) {
+                        const hrColor = hrVal < 60 ? 'var(--warning)' : hrVal > 100 ? 'var(--danger)' : 'var(--success)';
+                        healthBadges += '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(245,101,101,0.1);"><i class="fas fa-heartbeat"></i> Пульс <b style="color:'+hrColor+';">'+Math.round(hrVal)+' bpm</b></span>';
+                    }
+                    if (respVal > 0) {
+                        healthBadges += '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(66,153,225,0.1);"><i class="fas fa-lungs"></i> Дыхание <b>'+Math.round(respVal)+'/мин</b></span>';
+                    }
+                    const symptoms = health.symptoms || [];
+                    if (symptoms.length > 0) {
+                        // Dedupe symptoms
+                        const uniqueSymptoms = [...new Set(symptoms.map(s => s.condition_code))];
+                        const topSymptom = uniqueSymptoms[0] || 'Симптом';
+                        const symColor = symptoms[0].severity_level === 'critical' ? 'var(--danger)' : 'var(--warning)';
+                        healthBadges += '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(237,137,54,0.1);"><i class="fas fa-stethoscope"></i> <b style="color:'+symColor+';">'+topSymptom+'</b>' + (uniqueSymptoms.length > 1 ? ' +' + (uniqueSymptoms.length-1) : '') + '</span>';
+                    } else if (hrVal > 0 || respVal > 0) {
+                        healthBadges += '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(72,187,120,0.1);"><i class="fas fa-shield-alt"></i> Кожа <b style="color:var(--success);">Нормально</b></span>';
+                    }
+                }
+
+                return `
+                <div class="session-item" onclick="openSession(${sess.id})" style="cursor:pointer;">
+                    <div style="flex:1;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                            <h4 style="margin:0;">Сессия #${sess.id}</h4>
+                            <span class="session-badge ${sess.end_time ? 'badge-completed' : 'badge-active'}" style="font-size:11px;">${sess.end_time ? 'Завершена' : 'Активна'}</span>
+                            ${dur ? '<span style="font-size:12px;color:var(--text-light);"><i class="fas fa-clock"></i> ' + dur + '</span>' : ''}
+                        </div>
+                        <p style="margin:0 0 8px;font-size:13px;color:var(--text-light);">${sess.start_time ? new Date(sess.start_time).toLocaleString() : ''}</p>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                            ${fatigue !== null ? '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(102,126,234,0.1);"><i class="fas fa-brain"></i> Усталость <b style="color:'+fatigueColor+';">'+fatigue+'%</b></span>' : ''}
+                            ${stress !== null ? '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(102,126,234,0.1);"><i class="fas fa-bolt"></i> Стресс <b style="color:'+stressColor+';">'+stress+'%</b></span>' : ''}
+                            ${eyeContact !== null ? '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(102,126,234,0.1);"><i class="fas fa-eye"></i> Контакт <b>'+eyeContact+'%</b></span>' : ''}
+                            ${blinks !== null ? '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(102,126,234,0.1);"><i class="fas fa-low-vision"></i> Моргания <b>'+blinks+'</b></span>' : ''}
+                            ${domEm ? '<span style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(102,126,234,0.1);">'+domEm+'</span>' : ''}
+                            ${healthBadges}
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:var(--text-light);font-size:18px;"></i>
+                </div>
+            `;
+            }).join('');
+            }); // end Promise.all healthPromises
+        })
+        .catch(() => {
+            document.getElementById('sessionsList').innerHTML = '<div style="color:red;padding:20px;">Ошибка загрузки сессий</div>';
+        });
+}
+const permOverlay = document.getElementById('permOverlay');
+const grantPermBtn = document.getElementById('grantPermBtn');
+const permStatus = document.getElementById('permStatus');
+const camStatus = document.getElementById('camStatus');
+const micStatus = document.getElementById('micStatus');
+const btnStart = document.getElementById('btnStart');
+const btnStop = document.getElementById('btnStop');
+const videoEl = document.getElementById('videoEl');
+const videoPlaceholder = document.getElementById('videoPlaceholder');
+const audioBar = document.getElementById('audioBar');
+const audioLevelText = document.getElementById('audioLevelText');
+let mediaStream = null;
+let audioContext = null;
+let analyser = null;
+let audioSource = null;
+let animationId = null;
+let monitoring = false;
+let frameInterval = null;
+let lastFrameResult = null;
+let audioInterval = null;
+let lastVoiceResult = null;
+let currentCameraId = null; // track selected camera deviceId
+let _rtFrameCount = 0;
+let _rtFaceDetectedCount = 0;
+
+// === SYNCED STATE: single source of truth for all display components ===
+// Updated by blink (80ms), frame (2s), and voice (500ms) endpoints.
+// Both overlay and metrics panel read from this.
+let _synced = {
+    eye_openness: 0,
+    blink_rate: 0,
+    smile_score: 0,
+    anger_score: 0,
+    sad_score: 0,
+    fatigue_percent: 0,
+    wellbeing_score: 0,
+    dominant_emotion: 'Unknown',
+    emotion_percent: {},
+    face_detected: false,
+    people_count: 0,
+    stress_percent: 0,
+    voice_quality: '—',
+    ear: 0,
+    persons: [],  // full persons array from last frame result
+    recognized_person: null,  // { name, confidence, id } from face recognition
+    // Health (DOC.FAI.ME) — integrated
+    heart_rate: 0,
+    heart_rate_status: '—',
+    resp_rate: 0,
+};
+
+// === Voice analysis buffers ===
+let _rmsBuffer = [];        // [{time, rms}] collected at ~60fps for syllable counting
+let _prevFreqData = null;   // previous frame frequency snapshot for spectral flux
+let _lastSpeechRate = 0;    // syllables/sec
+
+function showPermOverlay(show) {
+    permOverlay.classList.toggle('hidden', !show);
+}
+
+async function enumerateCameras() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(d => d.kind === 'videoinput');
+        const sel = document.getElementById('cameraSelect');
+        sel.innerHTML = '';
+        cameras.forEach((cam, i) => {
+            const opt = document.createElement('option');
+            opt.value = cam.deviceId;
+            opt.textContent = cam.label || ('Камера ' + (i + 1));
+            sel.appendChild(opt);
+        });
+        // Select current camera if set
+        if (currentCameraId) {
+            sel.value = currentCameraId;
+        } else if (cameras.length > 0) {
+            currentCameraId = cameras[0].deviceId;
+        }
+        return cameras;
+    } catch (e) {
+        console.error('enumerateCameras:', e);
+        return [];
+    }
+}
+
+async function startCameraStream(deviceId) {
+    // Stop existing video tracks
+    if (mediaStream) {
+        mediaStream.getVideoTracks().forEach(t => t.stop());
+    }
+    const constraints = {
+        video: deviceId ? { deviceId: { exact: deviceId } } : true,
+        audio: true
+    };
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        // Keep existing audio tracks if we already have them, replace video
+        if (mediaStream) {
+            // Replace video track in existing stream
+            const oldVideoTracks = mediaStream.getVideoTracks();
+            oldVideoTracks.forEach(t => { mediaStream.removeTrack(t); t.stop(); });
+            stream.getVideoTracks().forEach(t => mediaStream.addTrack(t));
+            // If no audio tracks yet, add them
+            if (mediaStream.getAudioTracks().length === 0) {
+                stream.getAudioTracks().forEach(t => mediaStream.addTrack(t));
+            }
+        } else {
+            mediaStream = stream;
+        }
+        if (videoEl) {
+            videoEl.srcObject = mediaStream;
+            videoEl.style.display = '';
+            videoPlaceholder.style.display = 'none';
+        }
+        currentCameraId = deviceId || (stream.getVideoTracks()[0]?.getSettings()?.deviceId);
+        // Re-enumerate to get labels (available after permission granted)
+        await enumerateCameras();
+        return true;
+    } catch (e) {
+        console.error('startCameraStream:', e);
+        return false;
+    }
+}
+
+async function switchCamera() {
+    const sel = document.getElementById('cameraSelect');
+    const newId = sel.value;
+    if (!newId || newId === currentCameraId) return;
+    logEvent('Переключение камеры...', 'info');
+    const ok = await startCameraStream(newId);
+    if (ok) {
+        logEvent('Камера переключена: ' + (sel.options[sel.selectedIndex]?.text || newId), 'success');
+    } else {
+        logEvent('Ошибка переключения камеры', 'error');
+    }
+}
+
+async function requestPermissions() {
+    permStatus.textContent = '';
+    try {
+        const ok = await startCameraStream(currentCameraId);
+        if (ok) {
+            camStatus.textContent = 'разрешено';
+            micStatus.textContent = 'разрешено';
+            showPermOverlay(false);
+            btnStart.disabled = false;
+            logEvent('Доступ к камере и микрофону разрешён.', 'success');
+        } else {
+            throw new Error('Camera access denied');
+        }
+    } catch (err) {
+        camStatus.textContent = 'отказано';
+        micStatus.textContent = 'отказано';
+        permStatus.innerHTML = '<span class="denied">Доступ не предоставлен: ' + (err.name || err.message) + '</span>';
+        logEvent('Ошибка доступа к камере/микрофону: ' + (err.name || err.message), 'error');
+    }
+}
+
+function skipPermissions() {
+    showPermOverlay(false);
+    logEvent('Пользователь пропустил разрешения.', 'warning');
+}
+
+function logEvent(msg, type = 'info') {
+    const logContainer = document.getElementById('logContainer');
+    const div = document.createElement('div');
+    div.className = 'log-entry ' + type;
+    div.textContent = msg;
+    logContainer.appendChild(div);
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+function showSection(section, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(section).classList.add('active');
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    if (section === 'dashboard') loadDashboard();
+    if (section === 'sessions') loadSessions();
+    if (section === 'people') loadPeople();
+}
+
+// ====== AUTO-CYCLE: 10s work / 20s rest ======
+let _cycleActive = false;    // overall cycle running
+let _cyclePhase = 'idle';    // 'work' | 'rest' | 'idle'
+let _cycleSessionNum = 0;    // session counter
+let _restTimeout = null;     // rest phase timeout
+
+function _setCyclePhase(phase, seconds) {
+    _cyclePhase = phase;
+    const label = document.getElementById('cyclePhaseLabel');
+    if (!label) return;
+    if (phase === 'work') {
+        label.style.display = '';
+        label.style.background = 'rgba(72,187,120,0.7)';
+        label.textContent = '⚡ Сессия #' + _cycleSessionNum;
+    } else if (phase === 'rest') {
+        label.style.display = '';
+        label.style.background = 'rgba(237,137,54,0.7)';
+        label.textContent = '⏸ Отдых';
+    } else {
+        label.style.display = 'none';
+    }
+}
+
+function startMonitoring() {
+    if (!mediaStream) {
+        logEvent('Нет доступа к камере/микрофону.', 'error');
+        return;
+    }
+    _cycleActive = true;
+    _cycleSessionNum = 0;
+    btnStart.disabled = true;
+    btnStop.disabled = false;
+    logEvent('Мониторинг начат (авто-цикл: 30с работа / 20с отдых).', 'success');
+    _startWorkPhase();
+}
+
+function _startWorkPhase() {
+    if (!_cycleActive) return;
+    _cycleSessionNum++;
+    monitoring = true;
+    _rtFrameCount = 0;
+    _rtFaceDetectedCount = 0;
+    _setCyclePhase('work');
+    startAudioLevel();
+    startTimer(30, _endWorkPhase);
+    logEvent('✅ Сессия #' + _cycleSessionNum + ' начата (30с).', 'info');
+
+    const apiUrl = getApiUrl();
+    startVoiceAnalysis(apiUrl);
+
+    fetch(apiUrl + '/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ environment: 'browser' })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.session_id) {
+            window._currentSessionId = data.session_id;
+            startFrameAnalysis(apiUrl, data.session_id);
+        }
+    })
+    .catch(() => {});
+}
+
+function _endWorkPhase() {
+    if (!_cycleActive) return;
+    monitoring = false;
+    stopFrameAnalysis();
+    stopVoiceAnalysis();
+    stopAudioLevel();
+    // Завершить текущую сессию
+    if (window._currentSessionId) {
+        const apiUrl = getApiUrl();
+        fetch(apiUrl + '/api/sessions/end/' + window._currentSessionId, { method: 'POST' })
+            .then(() => {
+                logEvent('Сессия #' + _cycleSessionNum + ' сохранена.', 'success');
+                window._currentSessionId = null;
+                loadSessions();
+                loadDashboard();
+            })
+            .catch(() => {});
+    }
+    updateRealtimeMetrics(null);
+    // Очистить overlay
+    const overlay = document.getElementById('overlayCanvas');
+    if (overlay) { const c = overlay.getContext('2d'); c.clearRect(0,0,overlay.width,overlay.height); overlay.style.display='none'; }
+    const pp = document.getElementById('personsPanel');
+    if (pp) { pp.style.display='none'; document.getElementById('personsMetrics').innerHTML=''; }
+
+    if (!_cycleActive) return;
+    // Начать фазу отдыха 20с
+    _setCyclePhase('rest');
+    logEvent('⏸ Отдых 20с...', 'info');
+    startTimer(20, _startWorkPhase);
+    _restTimeout = setTimeout(() => {}, 20000); // placeholder for cleanup
+}
+
+function stopMonitoring() {
+    _cycleActive = false;
+    monitoring = false;
+    _setCyclePhase('idle');
+    if (_restTimeout) { clearTimeout(_restTimeout); _restTimeout = null; }
+    btnStart.disabled = false;
+    btnStop.disabled = true;
+    stopAudioLevel();
+    stopTimer();
+    timerSeconds = 0;
+    updateTimerDisplay();
+    logEvent('Мониторинг остановлен. Сессий проведено: ' + _cycleSessionNum, 'info');
+    stopFrameAnalysis();
+    stopVoiceAnalysis();
+    if (window._currentSessionId) {
+        const apiUrl = getApiUrl();
+        fetch(apiUrl + '/api/sessions/end/' + window._currentSessionId, { method: 'POST' })
+            .then(() => {
+                logEvent('Последняя сессия сохранена.', 'success');
+                window._currentSessionId = null;
+                loadSessions();
+                loadDashboard();
+            })
+            .catch(() => {
+                logEvent('Ошибка сохранения сессии!', 'error');
+            });
+    }
+    updateRealtimeMetrics(null);
+    const overlay = document.getElementById('overlayCanvas');
+    if (overlay) {
+        const octx = overlay.getContext('2d');
+        octx.clearRect(0, 0, overlay.width, overlay.height);
+        overlay.style.display = 'none';
+    }
+    const pp = document.getElementById('personsPanel');
+    if (pp) { pp.style.display = 'none'; document.getElementById('personsMetrics').innerHTML = ''; }
+}
+
+let blinkInterval = null;
+let _blinkBusy = false;
+let _frameBusy = false;
+let _audioBusy = false;
+
+let _overlayTimer = null; // stable overlay redraw timer
+let _healthInterval = null; // integrated health analysis timer
+let _lastHealthData = null; // last health analysis result
+let _personsHealthData = {}; // per-person health data keyed by person_id
+
+function startFrameAnalysis(apiUrl, sessionId) {
+    // Full emotion analysis every 2 seconds
+    if (frameInterval) clearInterval(frameInterval);
+    frameInterval = setInterval(() => {
+        if (!monitoring || !mediaStream || _frameBusy) return;
+        captureAndSendFrame(apiUrl, sessionId);
+    }, 2000);
+    // Lightweight blink detection every 80ms (~12 fps) for fast blinks
+    if (blinkInterval) clearInterval(blinkInterval);
+    blinkInterval = setInterval(() => {
+        if (!monitoring || !mediaStream || _blinkBusy) return;
+        captureAndSendBlink(apiUrl, sessionId);
+    }, 80);
+    // Stable overlay redraw every 500ms — prevents flickering
+    if (_overlayTimer) clearInterval(_overlayTimer);
+    _overlayTimer = setInterval(() => {
+        if (!monitoring) return;
+        if (lastFrameResult) {
+            drawPersonBoxes(lastFrameResult);
+            updatePersonsPanel(lastFrameResult);
+        }
+    }, 500);
+    // Integrated health analysis every 3 seconds (DOC.FAI.ME)
+    if (_healthInterval) clearInterval(_healthInterval);
+    _healthInterval = setInterval(() => {
+        if (!monitoring || !mediaStream) return;
+        captureAndAnalyzeHealth(apiUrl, sessionId);
+    }, 3000);
+    // Show skin/conditions cards
+    const skinCard = document.getElementById('skinAnalysisCard');
+    const condCard = document.getElementById('conditionsCard');
+    if (skinCard) skinCard.style.display = '';
+    if (condCard) condCard.style.display = '';
+    logEvent('🏥 Здоровье: анализ кожи, пульса, дыхания интегрирован', 'info');
+}
+
+function stopFrameAnalysis() {
+    if (frameInterval) clearInterval(frameInterval);
+    frameInterval = null;
+    if (blinkInterval) clearInterval(blinkInterval);
+    blinkInterval = null;
+    if (_overlayTimer) clearInterval(_overlayTimer);
+    _overlayTimer = null;
+    if (_healthInterval) clearInterval(_healthInterval);
+    _healthInterval = null;
+}
+
+function captureAndSendBlink(apiUrl, sessionId) {
+    try {
+        const video = videoEl;
+        if (!video || video.readyState < 2) return;
+        _blinkBusy = true;
+        const canvas = document.getElementById('captureCanvas');
+        // Small resolution for fast blink detection
+        canvas.width = 320;
+        canvas.height = 240;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, 320, 240);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+        const base64 = dataUrl.split(',')[1];
+        fetch(apiUrl + '/api/analyze/blink', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64, session_id: sessionId })
+        })
+        .then(r => r.json())
+        .then(result => {
+            if (result && result.face_detected) {
+                _lastFaceTime = Date.now();
+                // Update synced state with high-frequency blink data
+                if (result.blink_rate !== undefined) _synced.blink_rate = result.blink_rate;
+                if (result.eye_openness_percent !== undefined) _synced.eye_openness = result.eye_openness_percent;
+                if (result.ear !== undefined) _synced.ear = result.ear;
+                if (result.smile_score !== undefined) _synced.smile_score = result.smile_score;
+                if (result.anger_landmark !== undefined) _synced.anger_score = result.anger_landmark;
+                if (result.sadness_landmark !== undefined) _synced.sad_score = result.sadness_landmark;
+                _synced.face_detected = true;
+                // Update blink/eyes UI immediately (lightweight, no canvas redraw)
+                document.getElementById('rtBlinks').textContent = _synced.blink_rate;
+                document.getElementById('rtEyes').textContent = _synced.eye_openness + '%';
+                // NOTE: overlay is redrawn by stable _overlayTimer (500ms), NOT here
+            }
+            _blinkBusy = false;
+        })
+        .catch(() => { _blinkBusy = false; });
+    } catch (e) { _blinkBusy = false; }
+}
+
+function captureAndSendFrame(apiUrl, sessionId) {
+    try {
+        const video = videoEl;
+        if (!video || video.readyState < 2) return;
+        _frameBusy = true;
+        const canvas = document.getElementById('captureCanvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const base64 = dataUrl.split(',')[1];
+        fetch(apiUrl + '/api/analyze/frame', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64, session_id: sessionId })
+        })
+        .then(r => r.json())
+        .then(result => {
+            lastFrameResult = result;
+            // Update synced state with frame data
+            if (result) {
+                if (result.fatigue_percent !== undefined) _synced.fatigue_percent = result.fatigue_percent;
+                if (result.smile_score !== undefined) _synced.smile_score = result.smile_score;
+                if (result.anger_score !== undefined) _synced.anger_score = result.anger_score;
+                if (result.sad_score !== undefined) _synced.sad_score = result.sad_score;
+                if (result.dominant_emotion) _synced.dominant_emotion = result.dominant_emotion;
+                if (result.emotion_percent) _synced.emotion_percent = result.emotion_percent;
+                if (result.eye_openness_percent !== undefined) _synced.eye_openness = result.eye_openness_percent;
+                if (result.blink_rate !== undefined) _synced.blink_rate = result.blink_rate;
+                if (result.ear !== undefined) _synced.ear = result.ear;
+                if (result.face_detected !== undefined) _synced.face_detected = result.face_detected;
+                if (result.people_count !== undefined) _synced.people_count = result.people_count;
+                if (result.persons) _synced.persons = result.persons;
+                if (result.recognized_person !== undefined) _synced.recognized_person = result.recognized_person;
+                // Compute wellbeing for main face
+                const eo = _synced.eye_openness;
+                const sm = _synced.smile_score;
+                const ft = _synced.fatigue_percent;
+                const ag = _synced.anger_score;
+                const sd = _synced.sad_score;
+                _synced.wellbeing_score = Math.min(100, Math.max(0,
+                    Math.min(30, Math.round(eo * 0.30)) +
+                    Math.min(25, Math.round(sm * 0.25)) +
+                    Math.max(0, 25 - Math.round(ft * 0.25)) +
+                    Math.max(0, 10 - Math.round(ag * 0.10)) +
+                    Math.max(0, 10 - Math.round(sd * 0.10))
+                ));
+            }
+            updateRealtimeMetrics(result);
+            drawPersonBoxes(result);
+            updatePersonsPanel(result);
+            _frameBusy = false;
+        })
+        .catch(() => { _frameBusy = false; });
+    } catch (e) { _frameBusy = false; }
+}
+
+let _lastFaceTime = 0;
+const FACE_GRACE_MS = 4000; // Keep showing face data for 4s after last detection
+
+function drawPersonBoxes(result) {
+    const overlay = document.getElementById('overlayCanvas');
+    const video = document.getElementById('videoEl');
+    if (!overlay || !video || !video.videoWidth) return;
+
+    const box = document.getElementById('videoBox');
+    const needW = box.clientWidth, needH = box.clientHeight;
+    // Only resize canvas when dimensions actually changed (resizing clears it)
+    if (overlay.width !== needW || overlay.height !== needH) {
+        overlay.width = needW;
+        overlay.height = needH;
+    }
+    overlay.style.display = '';
+
+    const ctx = overlay.getContext('2d');
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+    const persons = result && result.persons ? result.persons : [];
+    const peopleCount = result ? (result.people_count || 0) : 0;
+
+    // Account for object-fit: cover — video may be cropped
+    const vw = video.videoWidth, vh = video.videoHeight;
+    const cw = overlay.width, ch = overlay.height;
+    const scale = Math.max(cw / vw, ch / vh);
+    const offX = (cw - vw * scale) / 2;
+    const offY = (ch - vh * scale) / 2;
+
+    const emotionEmoji = {'Neutral':'😐','Happy':'😊','Sad':'😢','Angry':'😡','Surprise':'😮','Disgust':'🤢','Fear':'😨','Contempt':'😏','Tired':'😴','Unknown':'❓'};
+    const emotionRu = {'Neutral':'Спокойный','Happy':'Радость','Sad':'Грусть','Angry':'Злость','Surprise':'Удивление','Disgust':'Отвращение','Fear':'Страх','Contempt':'Презрение','Tired':'Усталый','Unknown':'—'};
+
+    // Helper: draw rounded rectangle
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    // Helper: get color for a percentage value (green→yellow→red)
+    function pctColor(val, invert) {
+        // invert: true means high value = bad (fatigue, anger, sadness)
+        const v = invert ? val : (100 - val);
+        if (v < 30) return '#4ade80';
+        if (v < 60) return '#fbbf24';
+        return '#f87171';
+    }
+
+    // Helper: draw a mini bar
+    function drawMiniBar(ctx, x, y, w, h, pct, color) {
+        // Background
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        roundRect(ctx, x, y, w, h, h/2);
+        ctx.fill();
+        // Fill
+        const fillW = Math.max(h, w * (pct / 100));
+        ctx.fillStyle = color;
+        roundRect(ctx, x, y, fillW, h, h/2);
+        ctx.fill();
+    }
+
+    // Global stress from voice — use synced state
+    const globalStress = _synced.stress_percent || null;
+
+    persons.forEach((p, pIdx) => {
+        const [x1, y1, x2, y2] = p.bbox;
+        const sx = x1 * scale + offX;
+        const sy = y1 * scale + offY;
+        const sw = (x2 - x1) * scale;
+        const sh = (y2 - y1) * scale;
+
+        // Use synced state ONLY for the person flagged as 'is_main' by backend
+        // This ensures overlay matches the real-time metrics panel exactly
+        let em;
+        if (p.is_main) {
+            em = Object.assign({}, p.emotion || {}, {
+                eye_openness: _synced.eye_openness,
+                smile_score: _synced.smile_score,
+                anger_score: _synced.anger_score,
+                sad_score: _synced.sad_score,
+                fatigue_percent: _synced.fatigue_percent,
+                wellbeing_score: _synced.wellbeing_score,
+                dominant_emotion: _synced.dominant_emotion || (p.emotion && p.emotion.dominant_emotion) || 'Unknown',
+            });
+        } else {
+            em = p.emotion || {};
+        }
+        const dom = em.dominant_emotion || 'Unknown';
+        const emoji = emotionEmoji[dom] || '❓';
+        const ruEm = emotionRu[dom] || dom;
+
+        // Color by emotion
+        let borderColor = '#00aaff';
+        if (dom === 'Angry' || dom === 'Disgust' || dom === 'Fear') borderColor = '#f87171';
+        else if (dom === 'Sad' || dom === 'Contempt') borderColor = '#fb923c';
+        else if (dom === 'Happy') borderColor = '#4ade80';
+        else if (dom === 'Surprise') borderColor = '#facc15';
+        else if (dom === 'Tired') borderColor = '#a78bfa';
+
+        // === Draw bounding box with rounded corners effect ===
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = borderColor;
+        ctx.shadowBlur = 6;
+        ctx.strokeRect(sx, sy, sw, sh);
+        ctx.shadowBlur = 0;
+
+        // === Collect metrics to show ===
+        const eyeOpen = em.eye_openness !== undefined ? em.eye_openness : null;
+        const fatigue = em.fatigue_percent !== undefined ? em.fatigue_percent : null;
+        const smile = em.smile_score !== undefined ? em.smile_score : null;
+        const anger = em.anger_score !== undefined ? em.anger_score : null;
+        const sadness = em.sad_score !== undefined ? em.sad_score : null;
+        const wellbeing = em.wellbeing_score !== undefined ? em.wellbeing_score : null;
+
+        // === Build info lines ===
+        const lines = [];
+        // Line 1: emotion
+        lines.push({ icon: emoji, text: ruEm, color: borderColor, bold: true });
+
+        // Line 2: wellbeing score
+        if (wellbeing !== null) {
+            const wbEmoji = wellbeing >= 70 ? '💚' : wellbeing >= 40 ? '💛' : '❤️';
+            lines.push({ icon: wbEmoji, text: `Самоч. ${wellbeing}%`, color: pctColor(wellbeing, false), bar: wellbeing, barInvert: false });
+        }
+
+        // Line 3: fatigue
+        if (fatigue !== null) {
+            lines.push({ icon: '😴', text: `Устал. ${fatigue}%`, color: pctColor(fatigue, true), bar: fatigue, barInvert: true });
+        }
+
+        // Line 4: eyes
+        if (eyeOpen !== null) {
+            lines.push({ icon: '👁️', text: `Глаза ${eyeOpen}%`, color: pctColor(eyeOpen, false), bar: eyeOpen, barInvert: false });
+        }
+
+        // Line 5: smile (always shown)
+        if (smile !== null) {
+            lines.push({ icon: '😊', text: `Улыб. ${smile}%`, color: smile > 20 ? '#4ade80' : 'rgba(255,255,255,0.6)', bar: smile, barInvert: false });
+        }
+
+        // Line 6: anger (always shown)
+        if (anger !== null) {
+            lines.push({ icon: '😡', text: `Злость ${anger}%`, color: anger > 15 ? '#f87171' : 'rgba(255,255,255,0.6)', bar: anger, barInvert: true });
+        }
+
+        // Line 7: sadness (always shown)
+        if (sadness !== null) {
+            lines.push({ icon: '😢', text: `Грусть ${sadness}%`, color: sadness > 15 ? '#fb923c' : 'rgba(255,255,255,0.6)', bar: sadness, barInvert: true });
+        }
+
+        // Line 8: stress from voice (show for main person; for others label as shared)
+        const stressVal = globalStress || 0;
+        if (p.is_main || persons.length === 1) {
+            lines.push({ icon: '🎤', text: `Стресс ${stressVal}%`, color: stressVal > 15 ? pctColor(stressVal, true) : 'rgba(255,255,255,0.6)', bar: stressVal, barInvert: true });
+        } else if (persons.length > 1) {
+            // For non-main persons, don't show voice stress — it's from one microphone
+            // and can't be attributed to a specific person
+            lines.push({ icon: '🎤', text: `Общий ${stressVal}%`, color: 'rgba(255,255,255,0.35)', bar: stressVal, barInvert: true });
+        }
+
+        // === Draw info panel ===
+        const panelPadX = 8, panelPadY = 6;
+        const lineH = 20;
+        const barW = 50, barH = 6;
+        const panelW = 150;
+        const panelH = panelPadY * 2 + lines.length * lineH;
+
+        // Position: prefer right side of bbox, fall back to left if no space
+        let panelX = sx + sw + 6;
+        let panelY = sy;
+        if (panelX + panelW > cw) {
+            panelX = sx - panelW - 6;
+        }
+        if (panelX < 2) panelX = sx + 4;
+        if (panelY + panelH > ch) {
+            panelY = ch - panelH - 4;
+        }
+        if (panelY < 2) panelY = 2;
+
+        // Panel background
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+        roundRect(ctx, panelX, panelY, panelW, panelH, 8);
+        ctx.fill();
+
+        // Panel border accent
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, panelX, panelY, panelW, panelH, 8);
+        ctx.stroke();
+
+        // Left accent stripe
+        ctx.fillStyle = borderColor;
+        roundRect(ctx, panelX, panelY, 3, panelH, 8);
+        ctx.fill();
+        ctx.fillRect(panelX + 2, panelY + 4, 1, panelH - 8);
+
+        // Draw lines
+        lines.forEach((line, idx) => {
+            const ly = panelY + panelPadY + idx * lineH + 14;
+            const lx = panelX + panelPadX + 4;
+
+            // Icon
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(line.icon, lx, ly);
+
+            // Text
+            ctx.font = line.bold ? 'bold 11px sans-serif' : '11px sans-serif';
+            ctx.fillStyle = line.color || '#fff';
+            ctx.fillText(line.text, lx + 18, ly);
+
+            // Mini bar (if applicable)
+            if (line.bar !== undefined) {
+                const bx = panelX + panelW - barW - panelPadX;
+                const by = ly - 8;
+                drawMiniBar(ctx, bx, by, barW, barH, line.bar, line.color);
+            }
+        });
+
+        // === Top label with person ID ===
+        // Show recognized name if available (for main person)
+        let personLabel = `#${p.id}`;
+        if (p.is_main && _synced.recognized_person && _synced.recognized_person.name) {
+            personLabel = _synced.recognized_person.name;
+        }
+        const topLabel = `${personLabel} ${emoji} ${ruEm}`;
+        ctx.font = 'bold 12px sans-serif';
+        const tm = ctx.measureText(topLabel);
+        const tlW = tm.width + 14;
+        const tlH = 20;
+        const tlX = sx + (sw - tlW) / 2; // centered above box
+        const tlY = sy - tlH - 4;
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        roundRect(ctx, tlX, tlY, tlW, tlH, 6);
+        ctx.fill();
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 1;
+        roundRect(ctx, tlX, tlY, tlW, tlH, 6);
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.fillText(topLabel, tlX + 7, tlY + 14);
+    });
+
+    // People count badge in top-left
+    if (peopleCount > 0) {
+        const countLabel = `👥 Людей: ${peopleCount}`;
+        ctx.font = 'bold 14px sans-serif';
+        const ctm = ctx.measureText(countLabel);
+        const bw = ctm.width + 20, bh = 28;
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+        roundRect(ctx, 8, 8, bw, bh, 8);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        roundRect(ctx, 8, 8, bw, bh, 8);
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.fillText(countLabel, 18, 27);
+    }
+}
+
+function updatePersonsPanel(result) {
+    const panel = document.getElementById('personsPanel');
+    const container = document.getElementById('personsMetrics');
+    if (!panel || !container) return;
+
+    const persons = result && result.persons ? result.persons : [];
+    if (persons.length === 0) {
+        panel.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+    panel.style.display = '';
+
+    const emotionRu = {'Neutral':'Спокойный','Happy':'Счастливый','Sad':'Грусть','Angry':'Злость','Surprise':'Удивление','Disgust':'Отвращение','Fear':'Страх','Contempt':'Презрение','Tired':'Усталый','Unknown':'Н/Д'};
+    const emotionIcon = {'Neutral':'😐','Happy':'😊','Sad':'😢','Angry':'😡','Surprise':'😮','Disgust':'🤢','Fear':'😨','Contempt':'😏','Unknown':'❓'};
+    const emotionColor = {'Happy':'#00cc44','Sad':'#ff8800','Angry':'#ff4444','Fear':'#ff4444','Disgust':'#ff4444','Surprise':'#ffcc00','Contempt':'#ff8800','Neutral':'#00aaff','Unknown':'#999'};
+
+    let html = '';
+    persons.forEach((p, pIdx) => {
+        // For person #1, use synced state to match real-time metrics panel
+        let em;
+        if (pIdx === 0 && persons.length <= 2) {
+            em = Object.assign({}, p.emotion || {}, {
+                eye_openness: _synced.eye_openness,
+                smile_score: _synced.smile_score,
+                anger_score: _synced.anger_score,
+                sad_score: _synced.sad_score,
+                fatigue_percent: _synced.fatigue_percent,
+                wellbeing_score: _synced.wellbeing_score,
+                dominant_emotion: _synced.dominant_emotion || (p.emotion && p.emotion.dominant_emotion) || 'Unknown',
+            });
+        } else {
+            em = p.emotion || {};
+        }
+        const dom = em.dominant_emotion || 'Unknown';
+        const icon = emotionIcon[dom] || '❓';
+        const color = emotionColor[dom] || '#667eea';
+        const ruEm = emotionRu[dom] || dom;
+        const conf = p.confidence ? Math.round(p.confidence * 100) : 0;
+        const eyes = em.eye_openness !== undefined ? em.eye_openness + '%' : '—';
+        const smile = em.smile_score !== undefined ? em.smile_score + '%' : '—';
+        const anger = em.anger_score !== undefined ? em.anger_score + '%' : '—';
+        const sad = em.sad_score !== undefined ? em.sad_score + '%' : '—';
+        const fatigue = em.fatigue_percent !== undefined ? em.fatigue_percent + '%' : '—';
+        const wellbeing = em.wellbeing_score !== undefined ? em.wellbeing_score : null;
+
+        // Wellbeing color
+        const wbColor = wellbeing !== null ? (wellbeing >= 70 ? '#48bb78' : wellbeing >= 40 ? '#ed8936' : '#f56565') : '#999';
+        const wbEmoji = wellbeing !== null ? (wellbeing >= 70 ? '💚' : wellbeing >= 40 ? '💛' : '❤️') : '—';
+        const wbText = wellbeing !== null ? wellbeing + '%' : '—';
+
+        // Stress from synced state
+        const stress = _synced.stress_percent ? _synced.stress_percent + '%' : '—';
+
+        html += `<div style="background:var(--light);border-radius:12px;padding:14px;border-left:4px solid ${color};">`;
+
+        // Header: icon + name + wellbeing badge
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">`;
+        html += `<span style="font-size:28px;">${icon}</span>`;
+        html += `<div style="flex:1"><strong>Человек ${p.id}</strong>`;
+        // Show recognized name
+        if (p.is_main && _synced.recognized_person && _synced.recognized_person.name) {
+            html += `<div class="recognized-badge" style="margin-top:3px;"><i class="fas fa-user-check"></i> ${_synced.recognized_person.name} <span style="font-weight:400;font-size:11px;">${_synced.recognized_person.confidence || ''}%</span></div>`;
+        }
+        html += `<div style="font-size:12px;color:var(--text-light);">Точность: ${conf}%</div></div>`;
+        if (wellbeing !== null) {
+            html += `<div style="text-align:center;background:${wbColor}15;border:1px solid ${wbColor};border-radius:10px;padding:4px 10px;">`;
+            html += `<div style="font-size:10px;color:${wbColor};">Самочувствие</div>`;
+            html += `<div style="font-size:18px;font-weight:700;color:${wbColor};">${wbEmoji} ${wbText}</div>`;
+            html += `</div>`;
+        }
+        html += `</div>`;
+
+        // Metrics grid - all key params
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:13px;">`;
+        html += `<div>😐 Эмоция: <b style="color:${color}">${ruEm}</b></div>`;
+        html += `<div>👁️ Глаза: <b>${eyes}</b></div>`;
+        html += `<div>😴 Устал.: <b>${fatigue}</b></div>`;
+        html += `<div>😊 Улыбка: <b>${smile}</b></div>`;
+        html += `<div>😡 Злость: <b>${anger}</b></div>`;
+        html += `<div>😢 Грусть: <b>${sad}</b></div>`;
+        html += `<div>🎤 Стресс: <b>${stress}</b></div>`;
+        html += `</div>`;
+
+        // ---- Per-person health data (skin, pulse, breathing) ----
+        const personHealth = _personsHealthData[p.id];
+        if (personHealth) {
+            const pH = personHealth.heart_rate || {};
+            const pR = personHealth.respiratory || {};
+            const pS = personHealth.skin_analysis || {};
+            const pConds = personHealth.detected_conditions || [];
+            const pHrVal = pH.estimated_heart_rate || 0;
+            const pHrConf = pH.heart_rate_confidence || 0;
+            const pRespVal = pR.estimated_resp_rate || 0;
+            const pRespConf = pR.resp_rate_confidence || 0;
+            const pSkinName = _getSkinDiseaseName(pS);
+            const pSkinOk = pSkinName === 'Норма';
+            const pAlert = personHealth.alert_level || 'none';
+
+            html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">`;
+            html += `<div style="font-size:11px;color:var(--text-light);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.3px;">🩺 Здоровье (DOC.FAI.ME)</div>`;
+            html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;">`;
+            // Pulse
+            const hrDisp = (pHrConf > 0.2 && pHrVal > 0) ? Math.round(pHrVal) + ' bpm' : '...';
+            const hrClr = pHrVal > 100 ? 'var(--danger)' : pHrVal < 60 && pHrVal > 0 ? 'var(--warning)' : pHrVal > 0 ? 'var(--success)' : 'var(--text-light)';
+            html += `<div>💓 <b style="color:${hrClr}">${hrDisp}</b></div>`;
+            // Breathing
+            const respDisp = (pRespConf > 0.2 && pRespVal > 0) ? Math.round(pRespVal) + '/м' : '...';
+            const respClr = pRespVal > 25 ? 'var(--danger)' : pRespVal < 12 && pRespVal > 0 ? 'var(--warning)' : pRespVal > 0 ? 'var(--success)' : 'var(--text-light)';
+            html += `<div>🫁 <b style="color:${respClr}">${respDisp}</b></div>`;
+            // Skin
+            const skinClr = pSkinOk ? 'var(--success)' : 'var(--warning)';
+            html += `<div>🩺 <b style="color:${skinClr}">${pSkinName}</b></div>`;
+            html += `</div>`;
+
+            // Skin bars (compact)
+            const skinKeys = [
+                { key: 'pallor_score', label: 'Блед.', color: '#a0aec0' },
+                { key: 'jaundice_score', label: 'Желт.', color: '#ed8936' },
+                { key: 'cyanosis_score', label: 'Циан.', color: '#4299e1' },
+                { key: 'redness_score', label: 'Красн.', color: '#f56565' },
+            ];
+            html += `<div style="margin-top:6px;">`;
+            skinKeys.forEach(sk => {
+                const val = Math.round((pS[sk.key] || 0) * 100);
+                html += `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;font-size:10px;">`;
+                html += `<span style="min-width:40px;color:var(--text-light);">${sk.label}</span>`;
+                html += `<div style="flex:1;height:4px;background:#e0e0e0;border-radius:2px;"><div style="width:${val}%;height:100%;background:${sk.color};border-radius:2px;"></div></div>`;
+                html += `<span style="min-width:26px;text-align:right;font-weight:600;color:${val>30?'var(--warning)':'var(--text-light)'};">${val}%</span>`;
+                html += `</div>`;
+            });
+            html += `</div>`;
+
+            // Detected conditions
+            if (pConds.length > 0) {
+                html += `<div style="margin-top:6px;">`;
+                pConds.forEach(c => {
+                    const sColor = c.severity === 'critical' ? 'var(--danger)' : 'var(--warning)';
+                    html += `<div style="font-size:11px;padding:3px 8px;background:rgba(245,101,101,0.08);border-left:2px solid ${sColor};border-radius:4px;margin-bottom:3px;">`;
+                    html += `<b style="color:${sColor}">${c.condition_code}</b> <span style="color:var(--text-light);">${Math.round((c.confidence||0)*100)}%</span>`;
+                    html += `</div>`;
+                });
+                html += `</div>`;
+            } else if (pAlert === 'none') {
+                html += `<div style="font-size:11px;color:var(--success);margin-top:4px;"><i class="fas fa-check-circle"></i> Здоров</div>`;
+            }
+            html += `</div>`;
+        }
+
+        // Mini emotion bars
+        const emPct = em.emotion_percent || {};
+        const sorted = Object.entries(emPct).sort((a,b) => b[1] - a[1]).slice(0, 4);
+        if (sorted.length > 0) {
+            html += `<div style="margin-top:8px;">`;
+            sorted.forEach(([name, val]) => {
+                const ruName = emotionRu[name] || name;
+                html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:11px;">`;
+                html += `<span style="min-width:70px;color:var(--text-light);">${ruName}</span>`;
+                html += `<div style="flex:1;height:6px;background:#e0e0e0;border-radius:3px;"><div style="width:${val}%;height:100%;background:${emotionColor[name]||'#667eea'};border-radius:3px;"></div></div>`;
+                html += `<span style="min-width:28px;text-align:right;font-weight:600;">${val}%</span>`;
+                html += `</div>`;
+            });
+            html += `</div>`;
+        }
+        html += `</div>`;
+    });
+    container.innerHTML = html;
+}
+
+function updateRealtimeMetrics(result) {
+    const now = Date.now();
+    const faceDetected = result && result.face_detected;
+
+    if (faceDetected) {
+        _lastFaceTime = now;
+    }
+
+    // Show face data if detected now OR within grace period
+    const showFace = faceDetected || (now - _lastFaceTime < FACE_GRACE_MS && _lastFaceTime > 0);
+
+    // Track eye contact stats
+    if (result && monitoring) {
+        _rtFrameCount++;
+        if (faceDetected) _rtFaceDetectedCount++;
+    }
+
+    if (faceDetected) {
+        document.getElementById('rtFace').textContent = 'Обнаружено';
+        // Recognized person
+        const recEl = document.getElementById('rtRecognizedPerson');
+        if (_synced.recognized_person && _synced.recognized_person.name) {
+            recEl.textContent = _synced.recognized_person.name;
+            recEl.className = 'value good';
+        } else {
+            recEl.textContent = 'Неизвестный';
+            recEl.className = 'value';
+        }
+        // YOLO people count
+        const peopleCount = _synced.people_count || 0;
+        const pcEl = document.getElementById('rtPeopleCount');
+        pcEl.textContent = peopleCount;
+        pcEl.className = 'value' + (peopleCount > 0 ? ' good' : '');
+        // Use synced values — same source as overlay
+        document.getElementById('rtFatigue').textContent = _synced.fatigue_percent + '%';
+        document.getElementById('rtEyes').textContent = _synced.eye_openness + '%';
+        document.getElementById('rtBlinks').textContent = _synced.blink_rate;
+        // Color-code fatigue
+        const fatEl = document.getElementById('rtFatigue');
+        fatEl.className = 'value';
+        if (_synced.fatigue_percent < 30) fatEl.classList.add('good');
+        else if (_synced.fatigue_percent < 60) fatEl.classList.add('warning');
+        else fatEl.classList.add('bad');
+        // Smile — from synced state
+        const happyPct = _synced.smile_score;
+        // Sadness — from synced state
+        const sadPct = _synced.sad_score;
+        // Anger — from synced state
+        const angryPct = _synced.anger_score;
+
+        const smileEl = document.getElementById('rtSmile');
+        if (happyPct >= 30) {
+            smileEl.textContent = 'Да ' + happyPct + '%';
+            smileEl.className = 'value good';
+        } else {
+            smileEl.textContent = 'Нет ' + happyPct + '%';
+            smileEl.className = 'value';
+        }
+
+        const sadEl = document.getElementById('rtSad');
+        if (sadPct >= 30) {
+            sadEl.textContent = 'Да ' + sadPct + '%';
+            sadEl.className = 'value bad';
+        } else {
+            sadEl.textContent = 'Нет ' + sadPct + '%';
+            sadEl.className = 'value';
+        }
+
+        const angryEl = document.getElementById('rtAngry');
+        if (angryPct >= 30) {
+            angryEl.textContent = 'Да ' + angryPct + '%';
+            angryEl.className = 'value bad';
+        } else {
+            angryEl.textContent = 'Нет ' + angryPct + '%';
+            angryEl.className = 'value';
+        }
+    } else if (!showFace) {
+        document.getElementById('rtFace').textContent = '—';
+        document.getElementById('rtRecognizedPerson').textContent = '—';
+        document.getElementById('rtRecognizedPerson').className = 'value';
+        document.getElementById('rtPeopleCount').textContent = '0';
+        document.getElementById('rtPeopleCount').className = 'value';
+        document.getElementById('rtFatigue').textContent = '—';
+        document.getElementById('rtEyes').textContent = '—';
+        document.getElementById('rtBlinks').textContent = result && result.blink_rate !== undefined ? result.blink_rate : '0';
+        document.getElementById('rtFatigue').className = 'value';
+        document.getElementById('rtSmile').textContent = '—';
+        document.getElementById('rtSmile').className = 'value';
+        document.getElementById('rtSad').textContent = '—';
+        document.getElementById('rtSad').className = 'value';
+        document.getElementById('rtAngry').textContent = '—';
+        document.getElementById('rtAngry').className = 'value';
+    }
+    // else: within grace period, keep last values unchanged
+
+    // Eye contact percentage
+    const eyeContactPct = _rtFrameCount > 0 ? Math.round(_rtFaceDetectedCount / _rtFrameCount * 100) : 0;
+    document.getElementById('rtEyeContact').textContent = monitoring && _rtFrameCount > 0 ? eyeContactPct + '%' : '—';
+
+    // Voice & stress — from synced state
+    document.getElementById('rtVoice').textContent = _synced.voice_quality || '—';
+    document.getElementById('rtStress').textContent = _synced.stress_percent ? _synced.stress_percent + '%' : '—';
+
+    // Health metrics reset when monitoring stopped
+    if (!result && !monitoring) {
+        document.getElementById('rtHeartRate').textContent = '—';
+        document.getElementById('rtHeartRate').className = 'value';
+        document.getElementById('rtRespRate').textContent = '—';
+        document.getElementById('rtRespRate').className = 'value';
+        document.getElementById('rtSkinStatus').textContent = '—';
+        document.getElementById('rtSkinStatus').className = 'value';
+        const alertB = document.getElementById('healthAlertBanner');
+        if (alertB) alertB.style.display = 'none';
+        const skinCard = document.getElementById('skinAnalysisCard');
+        const condCard = document.getElementById('conditionsCard');
+        if (skinCard) skinCard.style.display = 'none';
+        if (condCard) condCard.style.display = 'none';
+    }
+
+    // Voice clarity & speech rate are updated by separate 1-second timer (see _voiceClarityTimer)
+    // Only update stress/quality here from lastVoiceResult
+}
+
+function startVoiceAnalysis(apiUrl) {
+    if (audioInterval) clearInterval(audioInterval);
+    audioInterval = setInterval(() => {
+        if (!monitoring || !mediaStream || _audioBusy) return;
+        captureAndSendAudio(apiUrl);
+    }, 500); // анализ аудио каждые 500мс
+
+    // Separate 1-second timer for voice clarity & speech rate display
+    if (window._voiceClarityTimer) clearInterval(window._voiceClarityTimer);
+    window._voiceClarityTimer = setInterval(() => {
+        if (!monitoring) return;
+        if (lastVoiceResult) {
+            const rms = lastVoiceResult.rms || 0;
+            const clarity = lastVoiceResult.clarity;
+            const speechRateLabel = lastVoiceResult.speech_rate_label;
+            if (rms > 0.02 && clarity !== undefined && clarity > 0) {
+                const clEl = document.getElementById('rtVoiceClarity');
+                clEl.textContent = clarity + '%';
+                clEl.className = 'value' + (clarity >= 60 ? ' good' : clarity >= 30 ? ' warning' : '');
+                const srEl = document.getElementById('rtSpeechRate');
+                srEl.textContent = speechRateLabel || 'Спокойный';
+                srEl.className = 'value' + (speechRateLabel === 'Быстрый' ? ' warning' : '');
+            } else {
+                document.getElementById('rtVoiceClarity').textContent = 'Нет звука';
+                document.getElementById('rtVoiceClarity').className = 'value';
+                document.getElementById('rtSpeechRate').textContent = 'Нет звука';
+                document.getElementById('rtSpeechRate').className = 'value';
+            }
+        } else {
+            document.getElementById('rtVoiceClarity').textContent = '—';
+            document.getElementById('rtVoiceClarity').className = 'value';
+            document.getElementById('rtSpeechRate').textContent = '—';
+            document.getElementById('rtSpeechRate').className = 'value';
+        }
+    }, 1000); // четкость и темп речи обновляются каждую 1 секунду
+}
+
+function stopVoiceAnalysis() {
+    if (audioInterval) clearInterval(audioInterval);
+    audioInterval = null;
+    if (window._voiceClarityTimer) clearInterval(window._voiceClarityTimer);
+    window._voiceClarityTimer = null;
+}
+
+function captureAndSendAudio(apiUrl) {
+    try {
+        if (!analyser || !audioContext) return;
+        _audioBusy = true;
+
+        // --- RMS from time-domain ---
+        const timeData = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteTimeDomainData(timeData);
+        let sum = 0;
+        for (let i = 0; i < timeData.length; i++) {
+            const val = (timeData[i] - 128) / 128;
+            sum += val * val;
+        }
+        const rms = Math.sqrt(sum / timeData.length);
+
+        // --- Spectral Clarity from frequency data ---
+        const freqData = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(freqData);
+        const sampleRate = audioContext.sampleRate;
+        const binWidth = sampleRate / analyser.fftSize;
+        // Speech formant band: 300-3500 Hz
+        const speechLow = Math.max(1, Math.floor(300 / binWidth));
+        const speechHigh = Math.min(freqData.length - 1, Math.ceil(3500 / binWidth));
+
+        let speechEnergy = 0, totalEnergy = 0;
+        let maxBin = 0, sumBins = 0;
+        for (let i = 0; i < freqData.length; i++) {
+            const e = freqData[i] * freqData[i];
+            totalEnergy += e;
+            if (i >= speechLow && i <= speechHigh) {
+                speechEnergy += e;
+                if (freqData[i] > maxBin) maxBin = freqData[i];
+                sumBins += freqData[i];
+            }
+        }
+        const speechBins = speechHigh - speechLow + 1;
+        const meanBin = speechBins > 0 ? sumBins / speechBins : 1;
+        // peakiness: clear speech has prominent formant peaks (>2), noise is flat (~1)
+        const peakiness = meanBin > 0 ? maxBin / meanBin : 1;
+        // bandRatio: % of total energy in speech band
+        const bandRatio = totalEnergy > 0 ? speechEnergy / totalEnergy : 0;
+        // Spectral flux: difference from previous frame (more change = more articulation)
+        let flux = 0;
+        if (_prevFreqData && _prevFreqData.length === freqData.length) {
+            for (let i = speechLow; i <= speechHigh; i++) {
+                const diff = freqData[i] - _prevFreqData[i];
+                flux += diff * diff;
+            }
+            flux = Math.sqrt(flux / speechBins);
+        }
+        _prevFreqData = new Uint8Array(freqData);
+
+        let clarity = 0;
+        if (rms > 0.02) {
+            // bandRatio 0-1 (typ 0.5-0.9 for speech), peakiness 1-8, flux 0-50+
+            clarity = Math.round(
+                bandRatio * 35 +         // 0-35: energy concentrated in speech band
+                (peakiness - 1) * 10 +   // 0-40: formant peaks vs flat noise
+                Math.min(flux, 40) * 0.5 + // 0-20: spectral change (articulation)
+                Math.min(rms * 80, 15)    // 0-15: minimum volume for audibility
+            );
+            clarity = Math.max(5, Math.min(100, clarity));
+        }
+
+        // --- Speech Rate: count syllable peaks from _rmsBuffer ---
+        let speechRateLabel = 'Нет звука';
+        let syllablesPerSec = 0;
+        if (rms > 0.02 && _rmsBuffer.length > 20) {
+            // Smooth RMS buffer to remove micro-noise (moving average of 5 frames)
+            const smoothed = [];
+            for (let i = 2; i < _rmsBuffer.length - 2; i++) {
+                const avg = (_rmsBuffer[i-2].rms + _rmsBuffer[i-1].rms + _rmsBuffer[i].rms + _rmsBuffer[i+1].rms + _rmsBuffer[i+2].rms) / 5;
+                smoothed.push({ time: _rmsBuffer[i].time, rms: avg });
+            }
+            // Find syllable peaks: local maxima above threshold
+            const peakThreshold = 0.03;
+            let peaks = 0;
+            for (let i = 1; i < smoothed.length - 1; i++) {
+                if (smoothed[i].rms > peakThreshold &&
+                    smoothed[i].rms > smoothed[i-1].rms &&
+                    smoothed[i].rms >= smoothed[i+1].rms) {
+                    peaks++;
+                    i += 3; // skip ~50ms to avoid counting same syllable twice
+                }
+            }
+            const windowMs = smoothed.length > 1 ? smoothed[smoothed.length-1].time - smoothed[0].time : 1000;
+            const windowSec = Math.max(0.5, windowMs / 1000);
+            syllablesPerSec = peaks / windowSec;
+
+            if (syllablesPerSec > 5.5) speechRateLabel = 'Быстрый';
+            else if (syllablesPerSec > 2.5) speechRateLabel = 'Средний';
+            else speechRateLabel = 'Спокойный';
+        }
+
+        // Send to backend
+        const sessionId = window._currentSessionId;
+        fetch(apiUrl + '/api/analyze/voice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                rms: rms,
+                clarity: clarity,
+                speech_rate_label: speechRateLabel,
+                syllables_per_sec: Math.round(syllablesPerSec * 10) / 10,
+                session_id: sessionId
+            })
+        })
+        .then(r => r.json())
+        .then(result => {
+            lastVoiceResult = result;
+            // Update synced state with voice data
+            if (result) {
+                if (result.stress_percent !== undefined) _synced.stress_percent = result.stress_percent;
+                if (result.voice_quality) _synced.voice_quality = result.voice_quality;
+            }
+            updateRealtimeMetrics(lastFrameResult);
+            // Overlay is redrawn by stable _overlayTimer (500ms), not here
+            _audioBusy = false;
+        })
+        .catch(() => {
+            lastVoiceResult = null;
+            updateRealtimeMetrics(lastFrameResult);
+            _audioBusy = false;
+        });
+    } catch (e) { _audioBusy = false; }
+}
+
+function loadDashboard() {
+    const apiUrl = getApiUrl();
+    fetch(apiUrl + '/api/sessions/recent')
+        .then(r => r.json())
+        .then(data => {
+            const sessions = Array.isArray(data.sessions) ? data.sessions : (Array.isArray(data) ? data : []);
+            document.getElementById('dashSessions').textContent = sessions.length;
+            if (sessions.length > 0) {
+                const last = sessions[0];
+                document.getElementById('dashLast').textContent = last.start_time ? new Date(last.start_time).toLocaleString() : '—';
+                // Load stats for last 10 sessions and aggregate
+                const last10 = sessions.slice(0, 10);
+                const statPromises = last10.map(s =>
+                    fetch(apiUrl + '/api/statistics/session/' + s.id).then(r2 => r2.json()).catch(() => null)
+                );
+                Promise.all(statPromises).then(allStats => {
+                    const validStats = allStats.filter(s => s !== null);
+                    // Aggregate face stats
+                    const faceVals = [], faceMax = [], blinkVals = [], faceCounts = [];
+                    validStats.forEach(st => {
+                        if (st.face && st.face.avg_fatigue !== null && st.face.avg_fatigue !== undefined) {
+                            faceVals.push(st.face.avg_fatigue);
+                            if (st.face.max_fatigue !== null) faceMax.push(st.face.max_fatigue);
+                            if (st.face.avg_blink_rate !== null) blinkVals.push(st.face.avg_blink_rate);
+                            if (st.face.count) faceCounts.push(st.face.count);
+                        }
+                    });
+                    // Aggregate voice stats
+                    const stressVals = [], stressMax = [], loudVals = [], voiceCounts = [];
+                    validStats.forEach(st => {
+                        if (st.voice && st.voice.avg_stress !== null && st.voice.avg_stress !== undefined) {
+                            stressVals.push(st.voice.avg_stress);
+                            if (st.voice.max_stress !== null) stressMax.push(st.voice.max_stress);
+                            if (st.voice.avg_loudness !== null) loudVals.push(st.voice.avg_loudness);
+                            if (st.voice.count) voiceCounts.push(st.voice.count);
+                        }
+                    });
+                    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+                    const maxOf = arr => arr.length ? Math.max(...arr) : null;
+                    const sumOf = arr => arr.length ? arr.reduce((a, b) => a + b, 0) : 0;
+                    // Fatigue card
+                    const avgFatRaw = avg(faceVals);
+                    if (avgFatRaw !== null) {
+                        const avgFat = Math.round(avgFatRaw * 100);
+                        const mxFat = faceMax.length ? Math.round(maxOf(faceMax) * 100) : '—';
+                        const totalBlinks = blinkVals.length ? Math.round(avg(blinkVals)) : '—';
+                        const totalMeas = sumOf(faceCounts);
+                        const el = document.getElementById('dashFatigue');
+                        el.textContent = avgFat + '%';
+                        el.style.color = avgFat < 30 ? 'var(--success)' : avgFat < 60 ? 'var(--warning)' : 'var(--danger)';
+                        document.getElementById('dashFaceDetail').innerHTML =
+                            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">' +
+                            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+                            '<div style="font-size:11px;color:var(--text-light);">Сред. усталость</div><div style="font-size:20px;font-weight:700;">' + avgFat + '%</div></div>' +
+                            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+                            '<div style="font-size:11px;color:var(--text-light);">Макс. усталость</div><div style="font-size:20px;font-weight:700;">' + mxFat + '%</div></div>' +
+                            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+                            '<div style="font-size:11px;color:var(--text-light);">Ср. морганий</div><div style="font-size:20px;font-weight:700;">' + totalBlinks + '</div></div>' +
+                            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+                            '<div style="font-size:11px;color:var(--text-light);">Измерений</div><div style="font-size:20px;font-weight:700;">' + totalMeas + '</div></div>' +
+                            '</div>';
+                    } else {
+                        document.getElementById('dashFatigue').textContent = '—';
+                        document.getElementById('dashFaceDetail').textContent = 'Нет данных';
+                    }
+                    // Stress card
+                    const avgStrRaw = avg(stressVals);
+                    if (avgStrRaw !== null) {
+                        const avgStr = Math.round(avgStrRaw * 100);
+                        const mxStr = stressMax.length ? Math.round(maxOf(stressMax) * 100) : '—';
+                        const avgLoud = loudVals.length ? avg(loudVals).toFixed(4) : '—';
+                        const totalVMeas = sumOf(voiceCounts);
+                        const el = document.getElementById('dashStress');
+                        el.textContent = avgStr + '%';
+                        el.style.color = avgStr < 30 ? 'var(--success)' : avgStr < 60 ? 'var(--warning)' : 'var(--danger)';
+                        document.getElementById('dashVoiceDetail').innerHTML =
+                            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">' +
+                            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+                            '<div style="font-size:11px;color:var(--text-light);">Сред. стресс</div><div style="font-size:20px;font-weight:700;">' + avgStr + '%</div></div>' +
+                            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+                            '<div style="font-size:11px;color:var(--text-light);">Макс. стресс</div><div style="font-size:20px;font-weight:700;">' + mxStr + '%</div></div>' +
+                            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+                            '<div style="font-size:11px;color:var(--text-light);">Громкость (RMS)</div><div style="font-size:20px;font-weight:700;">' + avgLoud + '</div></div>' +
+                            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+                            '<div style="font-size:11px;color:var(--text-light);">Измерений</div><div style="font-size:20px;font-weight:700;">' + totalVMeas + '</div></div>' +
+                            '</div>';
+                    } else {
+                        document.getElementById('dashStress').textContent = '—';
+                        document.getElementById('dashVoiceDetail').textContent = 'Нет данных';
+                    }
+                    // Health summary for dashboard
+                    fetch(apiUrl + '/api/health/summary').then(r => r.json()).then(hs => {
+                        if (hs && hs.total_detections !== undefined) {
+                            document.getElementById('dashHealthDetail').innerHTML =
+                                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">' +
+                                '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+                                '<div style="font-size:11px;color:var(--text-light);">Всего записей</div><div style="font-size:18px;font-weight:700;">' + (hs.total_detections || 0) + '</div></div>' +
+                                '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+                                '<div style="font-size:11px;color:var(--text-light);">Частые симптомы</div><div style="font-size:14px;font-weight:700;">' + (hs.most_common_condition || '—') + '</div></div>' +
+                                '</div>';
+                        }
+                    }).catch(() => {});
+                }).catch(() => {
+                    document.getElementById('dashFatigue').textContent = '—';
+                    document.getElementById('dashStress').textContent = '—';
+                    document.getElementById('dashFaceDetail').textContent = '—';
+                    document.getElementById('dashVoiceDetail').textContent = '—';
+                    document.getElementById('dashHealthDetail').textContent = '—';
+                });
+            } else {
+                document.getElementById('dashLast').textContent = '—';
+                document.getElementById('dashFatigue').textContent = '—';
+                document.getElementById('dashStress').textContent = '—';
+                document.getElementById('dashFaceDetail').textContent = 'Нет данных';
+                document.getElementById('dashVoiceDetail').textContent = 'Нет данных';
+                document.getElementById('dashHealthDetail').textContent = 'Нет данных';
+            }
+            drawSessionsChart(sessions);
+        });
+}
+
+function drawSessionsChart(sessions) {
+    const ctx = document.getElementById('dashChart').getContext('2d');
+    // Группировка по дням
+    const days = {};
+    sessions.forEach(s => {
+        const d = s.start_time ? new Date(s.start_time).toLocaleDateString() : '—';
+        days[d] = (days[d] || 0) + 1;
+    });
+    const labels = Object.keys(days).slice(-7);
+    const data = labels.map(l => days[l]);
+    if (window._sessionsChart) window._sessionsChart.destroy();
+    window._sessionsChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Сессии', data, backgroundColor: '#667eea' }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+}
+
+function startAudioLevel() {
+    if (!mediaStream) return;
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    audioSource = audioContext.createMediaStreamSource(mediaStream);
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 1024;  // higher resolution for spectral analysis
+    analyser.smoothingTimeConstant = 0.3;
+    audioSource.connect(analyser);
+    _rmsBuffer = [];
+    _prevFreqData = null;
+    animateAudio();
+}
+
+function stopAudioLevel() {
+    if (animationId) cancelAnimationFrame(animationId);
+    if (audioContext) audioContext.close();
+    audioBar.style.width = '0%';
+    audioLevelText.textContent = '0%';
+}
+
+function animateAudio() {
+    if (!analyser) return;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteTimeDomainData(data);
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) {
+        const val = (data[i] - 128) / 128;
+        sum += val * val;
+    }
+    const rms = Math.sqrt(sum / data.length);
+    const percent = Math.min(100, Math.round(rms * 200));
+    audioBar.style.width = percent + '%';
+    audioLevelText.textContent = percent + '%';
+    // Collect RMS samples for syllable rate detection (~60fps)
+    const now = Date.now();
+    _rmsBuffer.push({ time: now, rms: rms });
+    // Keep last 5 seconds
+    while (_rmsBuffer.length > 0 && now - _rmsBuffer[0].time > 5000) _rmsBuffer.shift();
+    if (monitoring) animationId = requestAnimationFrame(animateAudio);
+}
+
+
+
+window.addEventListener('DOMContentLoaded', async () => {
+    // Enumerate cameras and show overlay if needed
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasCam = devices.some(d => d.kind === 'videoinput');
+        const hasMic = devices.some(d => d.kind === 'audioinput');
+        if (!hasCam || !hasMic) {
+            showPermOverlay(true);
+        } else {
+            showPermOverlay(false);
+        }
+        await enumerateCameras();
+    } catch (e) {
+        showPermOverlay(true);
+    }
+    btnStart.disabled = true;
+    btnStop.disabled = true;
+    updateTimerDisplay();
+    loadSessions();
+    loadDashboard();
+});
+
+// ====== SESSION DETAIL MODAL ======
+function getApiUrl() {
+    let url = localStorage.getItem('apiUrl') || '';
+    if (!url) {
+        const input = document.getElementById('apiUrlInput');
+        url = input ? input.value : '';
+    }
+    if (!url) url = 'http://localhost:5000';
+    return url.replace(/\/$/, '');
+}
+
+function openSession(sessionId) {
+    const apiUrl = getApiUrl();
+    const modal = document.getElementById('sessionModal');
+    const details = document.getElementById('sessionDetails');
+    details.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--primary);"></i><p style="margin-top:15px;color:var(--text-light);">Загрузка данных сессии...</p></div>';
+    modal.classList.add('show');
+
+    const emotionRu = {'Happy':'Счастье','Neutral':'Спокойствие','Sad':'Грусть','Angry':'Злость','Surprise':'Удивление','Disgust':'Отвращение','Fear':'Страх','Contempt':'Презрение','Tired':'Усталость','None':'Нет'};
+    const emotionIcon = {'Happy':'😊','Neutral':'😐','Sad':'😢','Angry':'😡','Surprise':'😮','Disgust':'🤢','Fear':'😨','Contempt':'😏'};
+
+    Promise.all([
+        fetch(apiUrl + '/api/sessions/' + sessionId).then(r => r.json()),
+        fetch(apiUrl + '/api/statistics/session/' + sessionId).then(r => r.json()),
+        fetch(apiUrl + '/api/health/symptoms/' + sessionId).then(r => r.json()).catch(() => null),
+    ])
+    .then(([summary, stats, healthData]) => {
+        const sess = summary.session || summary;
+        const faceArr = summary.face_analysis || [];
+        const voiceArr = summary.voice_analysis || [];
+
+        // Duration
+        let duration = '—';
+        if (sess.start_time && sess.end_time) {
+            const ms = new Date(sess.end_time) - new Date(sess.start_time);
+            const mins = Math.floor(ms / 60000);
+            const secs = Math.floor((ms % 60000) / 1000);
+            duration = mins + ' мин ' + secs + ' сек';
+        }
+
+        // Face stats
+        const faceSt = stats.face || {};
+        const avgFatigue = faceSt.avg_fatigue != null ? Math.round(faceSt.avg_fatigue * 100) : null;
+        const maxFatigue = faceSt.max_fatigue != null ? Math.round(faceSt.max_fatigue * 100) : null;
+        const totalBlinks = faceSt.avg_blink_rate != null ? Math.round(faceSt.avg_blink_rate) : null;
+        const avgEyeOpen = faceSt.avg_eye_openness != null ? Math.round(faceSt.avg_eye_openness * 100) : null;
+
+        // Eye contact %
+        const faceDetected = faceArr.filter(f => f.face_detected).length;
+        const eyeContactPct = faceArr.length > 0 ? Math.round(faceDetected / faceArr.length * 100) : null;
+
+        // Voice stats
+        const voiceSt = stats.voice || {};
+        const avgStress = voiceSt.avg_stress != null ? Math.round(voiceSt.avg_stress * 100) : null;
+        const maxStress = voiceSt.max_stress != null ? Math.round(voiceSt.max_stress * 100) : null;
+        const avgLoudness = voiceSt.avg_loudness != null ? voiceSt.avg_loudness.toFixed(4) : null;
+        const avgSpeechRate = voiceSt.avg_speech_rate != null ? Math.round(voiceSt.avg_speech_rate) : null;
+
+        // Voice quality labels
+        let voiceQualityBreakdown = '';
+        if (voiceArr.length > 0) {
+            const qualCounts = {};
+            voiceArr.forEach(va => {
+                const q = va.voice_quality || 'Unknown';
+                qualCounts[q] = (qualCounts[q] || 0) + 1;
+            });
+            voiceQualityBreakdown = Object.entries(qualCounts)
+                .sort((a, b) => b[1] - a[1])
+                .map(([q, cnt]) => '<span style="display:inline-block;padding:4px 12px;background:rgba(118,75,162,0.1);border-radius:15px;margin:3px;font-size:13px;">' + q + ' <b>' + Math.round(cnt/voiceArr.length*100) + '%</b></span>')
+                .join('');
+        }
+
+        // Speech rate labels
+        let speechRateBreakdown = '';
+        if (voiceArr.length > 0) {
+            const rateCounts = {};
+            voiceArr.forEach(va => {
+                const r = va.primary_indicator || 'Unknown';
+                rateCounts[r] = (rateCounts[r] || 0) + 1;
+            });
+            speechRateBreakdown = Object.entries(rateCounts)
+                .sort((a, b) => b[1] - a[1])
+                .map(([r, cnt]) => '<span style="display:inline-block;padding:4px 12px;background:rgba(118,75,162,0.1);border-radius:15px;margin:3px;font-size:13px;">' + r + ' <b>' + Math.round(cnt/voiceArr.length*100) + '%</b></span>')
+                .join('');
+        }
+
+        // Emotion breakdown
+        let emotionSummary = '';
+        if (faceArr.length > 0) {
+            const emotionCounts = {};
+            faceArr.filter(f => f.face_detected).forEach(fa => {
+                const em = fa.primary_indicator || 'Unknown';
+                emotionCounts[em] = (emotionCounts[em] || 0) + 1;
+            });
+            const total = faceArr.filter(f => f.face_detected).length || 1;
+            emotionSummary = Object.entries(emotionCounts)
+                .sort((a, b) => b[1] - a[1])
+                .map(([em, cnt]) => {
+                    const icon = emotionIcon[em] || '❓';
+                    const name = emotionRu[em] || em;
+                    return '<span style="display:inline-block;padding:4px 12px;background:rgba(102,126,234,0.1);border-radius:15px;margin:3px;font-size:13px;">' + icon + ' ' + name + ' <b>' + Math.round(cnt/total*100) + '%</b></span>';
+                })
+                .join('');
+        }
+
+        // Fatigue timeline
+        let fatigueTimeline = '';
+        if (faceArr.length > 1) {
+            const vals = faceArr.slice(-30).map(fa => Math.round((fa.fatigue_score || 0) * 100));
+            const max = Math.max(...vals, 1);
+            fatigueTimeline = '<div style="margin-top:15px;"><p style="font-size:13px;color:var(--text-light);margin-bottom:8px;">📈 Усталость по времени (последние ' + vals.length + '):</p><div style="display:flex;align-items:flex-end;gap:2px;height:60px;">' +
+                vals.map(v => {
+                    const h = Math.max(3, (v / max) * 55);
+                    const color = v < 30 ? 'var(--success)' : v < 60 ? 'var(--warning)' : 'var(--danger)';
+                    return '<div title="' + v + '%" style="flex:1;height:' + h + 'px;background:' + color + ';border-radius:3px 3px 0 0;min-width:4px;"></div>';
+                }).join('') + '</div></div>';
+        }
+
+        // Stress timeline
+        let stressTimeline = '';
+        if (voiceArr.length > 1) {
+            const vals = voiceArr.slice(-30).map(va => Math.round((va.stress_score || 0) * 100));
+            const max = Math.max(...vals, 1);
+            stressTimeline = '<div style="margin-top:15px;"><p style="font-size:13px;color:var(--text-light);margin-bottom:8px;">📈 Стресс по времени (последние ' + vals.length + '):</p><div style="display:flex;align-items:flex-end;gap:2px;height:60px;">' +
+                vals.map(v => {
+                    const h = Math.max(3, (v / max) * 55);
+                    const color = v < 30 ? 'var(--success)' : v < 60 ? 'var(--warning)' : 'var(--danger)';
+                    return '<div title="' + v + '%" style="flex:1;height:' + h + 'px;background:' + color + ';border-radius:3px 3px 0 0;min-width:4px;"></div>';
+                }).join('') + '</div></div>';
+        }
+
+        function statCard(label, value, color) {
+            return '<div style="background:var(--light);padding:12px;border-radius:10px;text-align:center;"><div style="font-size:11px;color:var(--text-light);">' + label + '</div><div style="font-size:20px;font-weight:700;color:' + color + ';">' + value + '</div></div>';
+        }
+        function colorByPct(v) { return v < 30 ? 'var(--success)' : v < 60 ? 'var(--warning)' : 'var(--danger)'; }
+
+        details.innerHTML = `
+            <h2 style="margin-bottom:20px;color:var(--primary);">
+                <i class="fas fa-clipboard-list"></i> Сессия #${sessionId}
+            </h2>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+                <div style="background:var(--light);padding:15px;border-radius:10px;">
+                    <div style="font-size:11px;color:var(--text-light);">Начало</div>
+                    <div style="font-weight:600;font-size:14px;">${sess.start_time ? new Date(sess.start_time).toLocaleString() : '—'}</div>
+                </div>
+                <div style="background:var(--light);padding:15px;border-radius:10px;">
+                    <div style="font-size:11px;color:var(--text-light);">Длительность</div>
+                    <div style="font-weight:600;font-size:14px;">${duration}</div>
+                </div>
+                <div style="background:var(--light);padding:15px;border-radius:10px;">
+                    <div style="font-size:11px;color:var(--text-light);">Статус</div>
+                    <div style="font-weight:600;font-size:14px;">${sess.end_time ? '✅ Завершена' : '▶️ Активна'}</div>
+                </div>
+            </div>
+
+            <h3 style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-video" style="color:var(--primary);"></i> Анализ лица
+                <span style="font-size:12px;color:var(--text-light);font-weight:400;">(${faceArr.length} измерений)</span>
+            </h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:15px;">
+                ${statCard('Сред. усталость', avgFatigue !== null ? avgFatigue + '%' : '—', avgFatigue !== null ? colorByPct(avgFatigue) : 'var(--text-light)')}
+                ${statCard('Макс. усталость', maxFatigue !== null ? maxFatigue + '%' : '—', maxFatigue !== null ? colorByPct(maxFatigue) : 'var(--text-light)')}
+                ${statCard('Контакт глаз', eyeContactPct !== null ? eyeContactPct + '%' : '—', eyeContactPct !== null ? (eyeContactPct >= 60 ? 'var(--success)' : 'var(--warning)') : 'var(--text-light)')}
+                ${statCard('Моргания', totalBlinks !== null ? totalBlinks : '—', 'var(--primary)')}
+                ${statCard('Сред. глаза', avgEyeOpen !== null ? avgEyeOpen + '%' : '—', 'var(--primary)')}
+            </div>
+
+            ${emotionSummary ? '<div style="margin-bottom:15px;"><p style="font-size:13px;color:var(--text-light);margin-bottom:5px;">🎭 Распределение эмоций:</p>' + emotionSummary + '</div>' : ''}
+            ${fatigueTimeline}
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+
+            <h3 style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-microphone" style="color:var(--secondary);"></i> Анализ голоса
+                <span style="font-size:12px;color:var(--text-light);font-weight:400;">(${voiceArr.length} измерений)</span>
+            </h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:15px;">
+                ${statCard('Сред. стресс', avgStress !== null ? avgStress + '%' : '—', avgStress !== null ? colorByPct(avgStress) : 'var(--text-light)')}
+                ${statCard('Макс. стресс', maxStress !== null ? maxStress + '%' : '—', maxStress !== null ? colorByPct(maxStress) : 'var(--text-light)')}
+                ${statCard('Сред. громкость', avgLoudness !== null ? avgLoudness : '—', 'var(--secondary)')}
+                ${statCard('Темп речи', avgSpeechRate !== null ? avgSpeechRate + ' сл/м' : '—', 'var(--secondary)')}
+            </div>
+
+            ${voiceQualityBreakdown ? '<div style="margin-bottom:10px;"><p style="font-size:13px;color:var(--text-light);margin-bottom:5px;">📢 Громкость:</p>' + voiceQualityBreakdown + '</div>' : ''}
+            ${speechRateBreakdown ? '<div style="margin-bottom:10px;"><p style="font-size:13px;color:var(--text-light);margin-bottom:5px;">🎵 Темп речи:</p>' + speechRateBreakdown + '</div>' : ''}
+            ${stressTimeline}
+        `;
+
+        // ---- Add Health Section to session modal (per-person) ----
+        if (healthData) {
+            const persons = healthData.persons || [];
+            const allSymptoms = healthData.symptoms || [];
+            const allVitals = healthData.vital_signs_history || [];
+
+            let healthHTML = '<hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">';
+            healthHTML += '<h3 style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">' +
+                '<i class="fas fa-heartbeat" style="color:var(--danger);"></i> Здоровье / DOC.FAI.ME' +
+                '<span style="font-size:12px;color:var(--text-light);font-weight:400;">(' + allVitals.length + ' измерений, ' + (persons.length || 1) + ' чел.)</span></h3>';
+
+            // Render per-person health cards
+            const personsList = persons.length > 0 ? persons : [{
+                person_id: 1,
+                latest_vital_signs: healthData.latest_vital_signs || {},
+                symptoms: allSymptoms,
+                vital_signs_history: allVitals,
+            }];
+
+            personsList.forEach((person, pIdx) => {
+                const lv = person.latest_vital_signs || {};
+                const pSymptoms = person.symptoms || [];
+                const pHistory = person.vital_signs_history || [];
+                const pid = person.person_id || (pIdx + 1);
+
+                // Person header (only if multiple persons)
+                if (personsList.length > 1) {
+                    const pAlert = lv.alert_level || 'none';
+                    const alertDot = pAlert === 'critical' ? '🔴' : pAlert === 'warning' ? '🟡' : '🟢';
+                    healthHTML += '<div style="background:var(--light);border-radius:10px;padding:14px;margin-bottom:12px;border-left:4px solid ' +
+                        (pAlert === 'critical' ? 'var(--danger)' : pAlert === 'warning' ? 'var(--warning)' : 'var(--success)') + ';">';
+                    healthHTML += '<div style="font-weight:700;margin-bottom:10px;font-size:14px;">' + alertDot + ' Человек ' + pid +
+                        '<span style="font-size:12px;color:var(--text-light);font-weight:400;margin-left:8px;">(' + pHistory.length + ' измерений)</span></div>';
+                }
+
+                // Vital signs cards
+                const hrBpm = lv.estimated_heart_rate || 0;
+                const respRate = lv.estimated_resp_rate || 0;
+                const hrColor = hrBpm > 0 ? (hrBpm < 60 ? 'var(--warning)' : hrBpm > 100 ? 'var(--danger)' : 'var(--success)') : 'var(--text-light)';
+                const respColor = respRate > 0 ? (respRate > 25 ? 'var(--danger)' : respRate < 12 ? 'var(--warning)' : 'var(--success)') : 'var(--text-light)';
+
+                healthHTML += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:12px;">';
+                healthHTML += statCard('💓 Пульс', hrBpm > 0 ? Math.round(hrBpm) + ' bpm' : '—', hrColor);
+                healthHTML += statCard('🫁 Дыхание', respRate > 0 ? Math.round(respRate) + '/мин' : '—', respColor);
+
+                // Skin scores
+                const skinScoreKeys = [
+                    { label: 'Бледность', key: 'pallor_score', disease: 'Анемия' },
+                    { label: 'Желтуха', key: 'jaundice_score', disease: 'Печень' },
+                    { label: 'Цианоз', key: 'cyanosis_score', disease: 'O₂↓' },
+                    { label: 'Покрасн.', key: 'redness_score', disease: 'Воспаление' },
+                    { label: 'Сыпь', key: 'rash_score', disease: 'Аллергия' },
+                    { label: 'Сухость', key: 'dryness_score', disease: 'Диабет' },
+                ];
+                skinScoreKeys.forEach(sk => {
+                    const val = lv[sk.key];
+                    if (val !== undefined && val !== null) {
+                        const pct = Math.round(val * 100);
+                        const col = pct > 50 ? 'var(--danger)' : pct > 40 ? 'var(--warning)' : 'var(--success)';
+                        healthHTML += statCard(sk.label, pct > 45 ? sk.disease + ' ' + pct + '%' : 'Норм ' + pct + '%', col);
+                    }
+                });
+                healthHTML += '</div>';
+
+                // Detected conditions
+                if (pSymptoms.length > 0) {
+                    healthHTML += '<div style="margin-bottom:10px;"><p style="font-size:12px;color:var(--text-light);margin-bottom:6px;">🩺 Обнаруженные состояния:</p>';
+                    // Deduplicate by condition_code
+                    const seen = new Set();
+                    pSymptoms.forEach(s => {
+                        const code = s.condition_code || s.condition_name || 'Симптом';
+                        if (seen.has(code)) return;
+                        seen.add(code);
+                        const sevColor = s.severity_level === 'critical' || s.severity === 'critical' ? 'var(--danger)' :
+                            s.severity_level === 'warning' || s.severity === 'warning' ? 'var(--warning)' : 'var(--info)';
+                        healthHTML += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:white;border-radius:8px;margin-bottom:4px;border-left:3px solid ' + sevColor + ';">' +
+                            '<strong style="color:var(--text);font-size:13px;">' + code + '</strong>' +
+                            '<span style="font-size:11px;color:var(--text-light);">' + Math.round((s.confidence || 0) * 100) + '%</span>' +
+                            (s.name_ru ? '<span style="font-size:11px;color:var(--text-light);margin-left:auto;">' + s.name_ru + '</span>' : '') +
+                            '</div>';
+                    });
+                    healthHTML += '</div>';
+                } else {
+                    healthHTML += '<p style="color:var(--success);margin-bottom:10px;font-size:13px;"><i class="fas fa-check-circle"></i> Симптомы не обнаружены — здоров</p>';
+                }
+
+                // HR timeline
+                if (pHistory.length > 1) {
+                    const hrVals = pHistory.slice(-30).map(v => Math.round(v.estimated_heart_rate || 0));
+                    const hrMax = Math.max(...hrVals, 1);
+                    healthHTML += '<div style="margin-top:8px;"><p style="font-size:12px;color:var(--text-light);margin-bottom:6px;">📈 Пульс по времени:</p>' +
+                        '<div style="display:flex;align-items:flex-end;gap:2px;height:50px;">' +
+                        hrVals.map(v => {
+                            const h = Math.max(3, (v / hrMax) * 45);
+                            const c = v === 0 ? '#ccc' : v < 60 ? 'var(--warning)' : v > 100 ? 'var(--danger)' : 'var(--success)';
+                            return '<div title="' + v + ' bpm" style="flex:1;height:' + h + 'px;background:' + c + ';border-radius:3px 3px 0 0;min-width:3px;"></div>';
+                        }).join('') + '</div></div>';
+                }
+
+                // Skin score timeline (pallor over time)
+                if (pHistory.length > 3) {
+                    const pallorVals = pHistory.slice(-30).map(v => Math.round((v.pallor_score || 0) * 100));
+                    const pallorMax = Math.max(...pallorVals, 1);
+                    if (pallorMax > 5) {
+                        healthHTML += '<div style="margin-top:8px;"><p style="font-size:12px;color:var(--text-light);margin-bottom:6px;">📈 Кожа (бледность) по времени:</p>' +
+                            '<div style="display:flex;align-items:flex-end;gap:2px;height:40px;">' +
+                            pallorVals.map(v => {
+                                const h = Math.max(2, (v / pallorMax) * 35);
+                                const c = v > 50 ? 'var(--danger)' : v > 30 ? 'var(--warning)' : 'var(--success)';
+                                return '<div title="' + v + '%" style="flex:1;height:' + h + 'px;background:' + c + ';border-radius:2px 2px 0 0;min-width:3px;"></div>';
+                            }).join('') + '</div></div>';
+                    }
+                }
+
+                if (personsList.length > 1) {
+                    healthHTML += '</div>'; // close person wrapper
+                }
+            });
+
+            details.innerHTML += healthHTML;
+        }
+    })
+    .catch(err => {
+        details.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);"><i class="fas fa-exclamation-triangle" style="font-size:32px;display:block;margin-bottom:10px;"></i>Ошибка загрузки данных сессии</div>';
+    });
+}
+
+function closeModal() {
+    document.getElementById('sessionModal').classList.remove('show');
+}
+
+// ====== INTEGRATED HEALTH ANALYSIS (DOC.FAI.ME) ======
+// Health analysis runs automatically as part of the main monitoring loop.
+// No separate start/stop needed — starts/stops with main monitoring.
+
+async function captureAndAnalyzeHealth(apiUrl, sessionId) {
+    try {
+        const video = videoEl;
+        if (!video || video.readyState < 2) return;
+        const canvas = document.getElementById('captureCanvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const base64 = dataUrl.split(',')[1];
+
+        const resp = await fetch(apiUrl + '/api/analyze/health', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: 'data:image/jpeg;base64,' + base64, session_id: sessionId })
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        _lastHealthData = data;
+        updateIntegratedHealthUI(data);
+    } catch (e) {
+        console.warn('Health analysis error:', e);
+    }
+}
+
+function updateIntegratedHealthUI(data) {
+    // ---- Store per-person health data ----
+    const healthPersons = data.persons || [];
+    if (healthPersons.length > 0) {
+        healthPersons.forEach(hp => {
+            _personsHealthData[hp.person_id] = hp;
+        });
+    }
+
+    // ---- Heart Rate (rt-metric card) — main person ----
+    const hr = data.heart_rate || {};
+    const hrVal = hr.estimated_heart_rate || 0;
+    const hrConf = hr.heart_rate_confidence || 0;
+    const rtHR = document.getElementById('rtHeartRate');
+
+    if (hrConf > 0.2 && hrVal > 0) {
+        const hrRound = Math.round(hrVal);
+        rtHR.textContent = hrRound + ' bpm';
+        rtHR.className = 'value ' + (hrVal < 60 ? 'warning' : hrVal > 100 ? 'bad' : 'good');
+        _synced.heart_rate = hrRound;
+        _synced.heart_rate_status = hrVal < 60 ? 'Брадикардия' : hrVal > 100 ? 'Тахикардия' : 'Норма';
+    } else {
+        rtHR.textContent = hr.signal_quality === 'collecting' ? '...' : '—';
+        rtHR.className = 'value';
+        _synced.heart_rate = 0;
+        _synced.heart_rate_status = hr.signal_quality === 'collecting' ? 'Сбор...' : '—';
+    }
+
+    // ---- Respiratory Rate ----
+    const rsp = data.respiratory || {};
+    const rspVal = rsp.estimated_resp_rate || 0;
+    const rspConf = rsp.resp_rate_confidence || 0;
+    const rtResp = document.getElementById('rtRespRate');
+
+    if (rspConf > 0.2 && rspVal > 0) {
+        const rspRound = Math.round(rspVal);
+        rtResp.textContent = rspRound + '/мин';
+        rtResp.className = 'value ' + (rspVal > 25 ? 'bad' : rspVal < 12 ? 'warning' : 'good');
+        _synced.resp_rate = rspRound;
+    } else {
+        rtResp.textContent = rsp.status === 'collecting' ? '...' : '—';
+        rtResp.className = 'value';
+        _synced.resp_rate = 0;
+    }
+
+    // ---- Skin Status (rt-metric card summary) ----
+    const skin = data.skin_analysis || {};
+    const skinOverall = skin.overall_skin_health || 'unknown';
+    const rtSkin = document.getElementById('rtSkinStatus');
+
+    // Build disease name from skin scores — show what's actually detected
+    const skinDiseaseMap = [
+        { key: 'pallor_score', name: 'Бледность (анемия)' },
+        { key: 'jaundice_score', name: 'Желтуха (печень)' },
+        { key: 'cyanosis_score', name: 'Цианоз (O₂↓)' },
+        { key: 'redness_score', name: 'Покраснение' },
+        { key: 'rash_score', name: 'Сыпь (аллергия)' },
+        { key: 'dryness_score', name: 'Сухость (диабет)' },
+    ];
+    let detectedSkinIssues = skinDiseaseMap
+        .filter(d => (skin[d.key] || 0) > 0.3)
+        .sort((a, b) => (skin[b.key] || 0) - (skin[a.key] || 0));
+
+    let skinDisplayText, skinDisplayCls;
+    if (skinOverall === 'normal' || detectedSkinIssues.length === 0) {
+        skinDisplayText = 'Нормально';
+        skinDisplayCls = 'good';
+    } else {
+        // Show top disease name
+        skinDisplayText = detectedSkinIssues[0].name;
+        skinDisplayCls = (skin[detectedSkinIssues[0].key] || 0) > 0.5 ? 'bad' : 'warning';
+    }
+    const skinInfo = { text: skinDisplayText, cls: skinDisplayCls };
+    rtSkin.textContent = skinDisplayText;
+    rtSkin.className = 'value ' + skinDisplayCls;
+    // Store for dashboard
+    _synced.skin_status_text = skinDisplayText;
+    _synced.skin_issues = detectedSkinIssues.map(d => d.name);
+
+    // ---- Skin Detail Bars ----
+    const skinScores = [
+        { id: 'Pallor', key: 'pallor_score' },
+        { id: 'Jaundice', key: 'jaundice_score' },
+        { id: 'Cyanosis', key: 'cyanosis_score' },
+        { id: 'Redness', key: 'redness_score' },
+        { id: 'Rash', key: 'rash_score' },
+        { id: 'Dryness', key: 'dryness_score' },
+    ];
+    skinScores.forEach(s => {
+        const val = skin[s.key] || 0;
+        const pct = Math.round(val * 100);
+        const el = document.getElementById('skin' + s.id);
+        const bar = document.getElementById('skin' + s.id + 'Bar');
+        if (el) {
+            el.textContent = pct + '%';
+            el.className = 'value ' + (pct > 50 ? 'bad' : pct > 30 ? 'warning' : 'good');
+        }
+        if (bar) bar.style.width = pct + '%';
+    });
+
+    // ---- Alert Banner ----
+    const alertBanner = document.getElementById('healthAlertBanner');
+    const alertText = document.getElementById('healthAlertText');
+    const alertLevel = data.alert_level || 'none';
+    if (alertLevel === 'critical') {
+        alertBanner.style.display = 'block';
+        alertBanner.style.background = '#f56565';
+        alertText.textContent = '🚨 НЕОТЛОЖНОЕ СОСТОЯНИЕ! Обратитесь к врачу!';
+    } else if (alertLevel === 'warning') {
+        alertBanner.style.display = 'block';
+        alertBanner.style.background = '#ed8936';
+        alertText.textContent = '⚠️ Требуется внимание';
+    } else {
+        alertBanner.style.display = 'none';
+    }
+
+    // ---- Detected Conditions ----
+    const conditionsEl = document.getElementById('detectedConditions');
+    const conditions = data.detected_conditions || [];
+    if (conditions.length === 0) {
+        conditionsEl.innerHTML = '<p style="color:var(--success);"><i class="fas fa-check-circle"></i> Симптомы не обнаружены</p>';
+    } else {
+        let html = '';
+        conditions.forEach(c => {
+            const sevColor = c.severity === 'critical' ? 'var(--danger)' : c.severity === 'warning' ? 'var(--warning)' : 'var(--info)';
+            const sevIcon = c.severity === 'critical' ? 'exclamation-triangle' : c.severity === 'warning' ? 'exclamation-circle' : 'info-circle';
+            html += `
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--light);border-radius:8px;margin-bottom:8px;border-left:4px solid ${sevColor};">
+                    <i class="fas fa-${sevIcon}" style="color:${sevColor};font-size:18px;"></i>
+                    <div>
+                        <strong style="color:var(--text);">${c.condition_code}</strong>
+                        <span style="margin-left:10px;color:var(--text-light);font-size:13px;">${c.notes || ''}</span>
+                        <br><span style="font-size:12px;color:var(--text-light);">
+                            Уверенность: ${Math.round(c.confidence * 100)}% | Значение: ${c.raw_value}
+                        </span>
+                    </div>
+                </div>`;
+        });
+        conditionsEl.innerHTML = html;
+    }
+
+    // ---- Update Dashboard health card (if visible) ----
+    const dashHealthEl = document.getElementById('dashHealthDetail');
+    if (dashHealthEl) {
+        const hrText = _synced.heart_rate > 0 ? _synced.heart_rate + ' bpm (' + _synced.heart_rate_status + ')' : '—';
+        const respText = _synced.resp_rate > 0 ? _synced.resp_rate + '/мин' : '—';
+        const condCount = conditions.length;
+        const skinIssuesList = (_synced.skin_issues && _synced.skin_issues.length > 0)
+            ? _synced.skin_issues.join(', ') : 'Нормально';
+        const condNames = conditions.map(c => c.condition_code).join(', ') || 'Нет';
+        let dashHTML =
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">' +
+            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+            '<div style="font-size:11px;color:var(--text-light);">💓 Пульс</div><div style="font-size:18px;font-weight:700;">' + hrText + '</div></div>' +
+            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+            '<div style="font-size:11px;color:var(--text-light);">🫁 Дыхание</div><div style="font-size:18px;font-weight:700;">' + respText + '</div></div>' +
+            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+            '<div style="font-size:11px;color:var(--text-light);">🩺 Кожа</div><div style="font-size:14px;font-weight:700;color:' + (skinDisplayCls === 'good' ? 'var(--success)' : skinDisplayCls === 'bad' ? 'var(--danger)' : 'var(--warning)') + ';">' + skinDisplayText + '</div></div>' +
+            '<div style="background:var(--light);padding:10px;border-radius:8px;text-align:center;">' +
+            '<div style="font-size:11px;color:var(--text-light);">⚕️ Состояния</div><div style="font-size:14px;font-weight:700;">' + (condCount > 0 ? condNames : '✅ Нет') + '</div></div>' +
+            '</div>';
+        // Show other persons' health summary
+        if (healthPersons.length > 1) {
+            dashHTML += '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">';
+            dashHTML += '<div style="font-size:12px;color:var(--text-light);margin-bottom:6px;">👥 Здоровье всех (' + healthPersons.length + ' чел.):</div>';
+            healthPersons.forEach(hp => {
+                const pHr = hp.heart_rate || {};
+                const pSkin = hp.skin_analysis || {};
+                const pConds = hp.detected_conditions || [];
+                const pHrVal = pHr.estimated_heart_rate || 0;
+                const pSkinHealth = pSkin.overall_skin_health || 'unknown';
+                const pAlert = hp.alert_level || 'none';
+                const alertDot = pAlert === 'critical' ? '🔴' : pAlert === 'warning' ? '🟡' : '🟢';
+                const skinText = _getSkinDiseaseName(pSkin);
+                dashHTML += '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;">' +
+                    alertDot + ' <b>Чел. ' + hp.person_id + ':</b> ' +
+                    (pHrVal > 0 ? '💓' + Math.round(pHrVal) + ' ' : '') +
+                    '🩺' + skinText +
+                    (pConds.length > 0 ? ' ⚠️' + pConds.length + ' сим.' : '') +
+                    '</div>';
+            });
+            dashHTML += '</div>';
+        }
+        dashHealthEl.innerHTML = dashHTML;
+    }
+}
+
+// Helper: get skin disease name from skin_analysis object
+function _getSkinDiseaseName(skin) {
+    if (!skin) return '—';
+    const skinDiseaseMap = [
+        { key: 'pallor_score', name: 'Бледность' },
+        { key: 'jaundice_score', name: 'Желтуха' },
+        { key: 'cyanosis_score', name: 'Цианоз' },
+        { key: 'redness_score', name: 'Покраснение' },
+        { key: 'rash_score', name: 'Сыпь' },
+        { key: 'dryness_score', name: 'Сухость' },
+    ];
+    const detected = skinDiseaseMap
+        .filter(d => (skin[d.key] || 0) > 0.45)
+        .sort((a, b) => (skin[b.key] || 0) - (skin[a.key] || 0));
+    return detected.length > 0 ? detected[0].name : 'Норма';
+}
+
+// ====== PEOPLE / FACE RECOGNITION ======
+let _scanStream = null;
+
+function loadPeople() {
+    const apiUrl = getApiUrl();
+    fetch(apiUrl + '/api/faces')
+        .then(r => r.json())
+        .then(data => {
+            const grid = document.getElementById('peopleGrid');
+            const countEl = document.getElementById('peopleCount');
+            const faces = data.faces || [];
+            countEl.textContent = faces.length > 0 ? `Зарегистрировано: ${faces.length} чел.` : '';
+            if (faces.length === 0) {
+                grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:white;opacity:0.7;">
+                    <i class="fas fa-users" style="font-size:48px;display:block;margin-bottom:15px;"></i>
+                    Нет зарегистрированных лиц. Нажмите «Добавить человека».
+                </div>`;
+                return;
+            }
+            grid.innerHTML = faces.map(f => {
+                const thumbSrc = f.thumbnail ? `data:image/jpeg;base64,${f.thumbnail}` : '';
+                const dateStr = f.created_at ? new Date(f.created_at).toLocaleDateString() : '';
+                return `<div class="person-card">
+                    <button class="person-delete" onclick="deletePerson(${f.id}, '${f.name.replace(/'/g, "\\'")}')" title="Удалить">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    ${thumbSrc
+                        ? `<img src="${thumbSrc}" alt="${f.name}">`
+                        : `<div class="person-placeholder"><i class="fas fa-user"></i></div>`
+                    }
+                    <div class="person-name">${f.name}</div>
+                    <div class="person-date">${dateStr}</div>
+                </div>`;
+            }).join('');
+        })
+        .catch(() => {
+            document.getElementById('peopleGrid').innerHTML = '<div style="color:red;padding:20px;">Ошибка загрузки</div>';
+        });
+}
+
+async function openAddPersonModal() {
+    const modal = document.getElementById('addPersonModal');
+    const scanVideo = document.getElementById('scanVideo');
+    const nameInput = document.getElementById('personNameInput');
+    const scanResult = document.getElementById('scanResult');
+    const scanProgress = document.getElementById('scanProgressContainer');
+
+    nameInput.value = '';
+    scanResult.style.display = 'none';
+    scanProgress.style.display = 'none';
+    document.getElementById('scanProgressBar').style.width = '0%';
+    document.getElementById('scanStatus').textContent = 'Расположите лицо в центре круга';
+    document.getElementById('btnScanFace').disabled = false;
+
+    modal.classList.add('show');
+
+    // Start camera for scanning
+    try {
+        _scanStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        scanVideo.srcObject = _scanStream;
+    } catch (e) {
+        document.getElementById('scanStatus').textContent = 'Ошибка доступа к камере';
+    }
+}
+
+function closeAddPersonModal() {
+    const modal = document.getElementById('addPersonModal');
+    modal.classList.remove('show');
+    // Stop scan camera
+    if (_scanStream) {
+        _scanStream.getTracks().forEach(t => t.stop());
+        _scanStream = null;
+    }
+    const scanVideo = document.getElementById('scanVideo');
+    if (scanVideo) scanVideo.srcObject = null;
+}
+
+async function scanAndRegisterFace() {
+    const nameInput = document.getElementById('personNameInput');
+    const scanVideo = document.getElementById('scanVideo');
+    const scanResult = document.getElementById('scanResult');
+    const scanProgress = document.getElementById('scanProgressContainer');
+    const scanProgressBar = document.getElementById('scanProgressBar');
+    const scanStatus = document.getElementById('scanStatus');
+    const btnScan = document.getElementById('btnScanFace');
+
+    const name = nameInput.value.trim();
+    if (!name) {
+        scanResult.style.display = 'block';
+        scanResult.innerHTML = '<div style="color:var(--danger);font-weight:600;"><i class="fas fa-exclamation-circle"></i> Введите имя человека</div>';
+        nameInput.focus();
+        return;
+    }
+
+    if (!_scanStream || !scanVideo || scanVideo.readyState < 2) {
+        scanResult.style.display = 'block';
+        scanResult.innerHTML = '<div style="color:var(--danger);"><i class="fas fa-exclamation-circle"></i> Камера не готова</div>';
+        return;
+    }
+
+    btnScan.disabled = true;
+    scanStatus.textContent = 'Сканирование лица...';
+    scanProgress.style.display = 'block';
+    scanResult.style.display = 'none';
+
+    // Animate progress bar
+    let progress = 0;
+    const progressTimer = setInterval(() => {
+        progress = Math.min(progress + 5, 90);
+        scanProgressBar.style.width = progress + '%';
+    }, 100);
+
+    try {
+        // Capture frame from scan video
+        const canvas = document.createElement('canvas');
+        canvas.width = scanVideo.videoWidth;
+        canvas.height = scanVideo.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(scanVideo, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        const apiUrl = getApiUrl();
+        const resp = await fetch(apiUrl + '/api/faces/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: dataUrl, name: name })
+        });
+
+        clearInterval(progressTimer);
+        scanProgressBar.style.width = '100%';
+
+        const data = await resp.json();
+
+        if (resp.ok) {
+            scanStatus.textContent = '✅ Лицо зарегистрировано!';
+            scanResult.style.display = 'block';
+            scanResult.innerHTML = `<div style="color:var(--success);font-weight:600;text-align:center;padding:10px;">
+                <i class="fas fa-check-circle" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+                ${data.message}
+            </div>`;
+            // Close modal after 1.5s and refresh list
+            setTimeout(() => {
+                closeAddPersonModal();
+                loadPeople();
+            }, 1500);
+        } else {
+            scanStatus.textContent = 'Ошибка регистрации';
+            scanResult.style.display = 'block';
+            scanResult.innerHTML = `<div style="color:var(--danger);font-weight:600;">
+                <i class="fas fa-exclamation-triangle"></i> ${data.error || 'Неизвестная ошибка'}
+            </div>`;
+            btnScan.disabled = false;
+        }
+    } catch (e) {
+        clearInterval(progressTimer);
+        scanStatus.textContent = 'Ошибка сети';
+        scanResult.style.display = 'block';
+        scanResult.innerHTML = `<div style="color:var(--danger);"><i class="fas fa-exclamation-triangle"></i> Ошибка соединения с сервером</div>`;
+        btnScan.disabled = false;
+    }
+}
+
+async function deletePerson(faceId, name) {
+    if (!confirm(`Удалить "${name}" из базы лиц?`)) return;
+    try {
+        const apiUrl = getApiUrl();
+        const resp = await fetch(apiUrl + '/api/faces/' + faceId, { method: 'DELETE' });
+        if (resp.ok) {
+            loadPeople();
+        } else {
+            alert('Ошибка удаления');
+        }
+    } catch (e) {
+        alert('Ошибка сети');
+    }
+}
+
+</script>
+<script>
+let currentLang = localStorage.getItem("selectedLanguage") || "ru";
+const i18nData = {"\u041c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433": {"en": "Monitor", "ko": "\ubaa8\ub2c8\ud130\ub9c1"}, "\u0414\u0430\u0448\u0431\u043e\u0440\u0434": {"en": "Dashboard", "ko": "\ub300\uc2dc\ubcf4\ub4dc"}, "\u0421\u0435\u0441\u0441\u0438\u0438": {"en": "Sessions", "ko": "\uc138\uc158"}, "\u041b\u044e\u0434\u0438": {"en": "People", "ko": "\uc0ac\ub78c\ub4e4"}, "\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438": {"en": "Settings", "ko": "\uc124\uc815"}, "\u041d\u0430\u0447\u0430\u0442\u044c \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433": {"en": "Start Monitoring", "ko": "\ubaa8\ub2c8\ud130\ub9c1 \uc2dc\uc791"}, "\u041e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c": {"en": "Stop", "ko": "\uc911\uc9c0"}, "\u0412\u0440\u0435\u043c\u044f:": {"en": "Time:", "ko": "\uc2dc\uac04:"}, "\u0423\u0440\u043e\u0432\u0435\u043d\u044c \u0437\u0432\u0443\u043a\u0430": {"en": "Sound Level", "ko": "\uc74c\ub7c9"}, "\u0422\u0438\u0445\u043e": {"en": "Quiet", "ko": "\uc870\uc6a9\ud568"}, "\u0413\u0440\u043e\u043c\u043a\u043e": {"en": "Loud", "ko": "\ud07c"}, "\u0410\u043d\u0430\u043b\u0438\u0437 \u0432 \u0440\u0435\u0430\u043b\u044c\u043d\u043e\u043c \u0432\u0440\u0435\u043c\u0435\u043d\u0438": {"en": "Real-Time Analysis", "ko": "\uc2e4\uc2dc\uac04 \ubd84\uc11d"}, "\u041b\u0438\u0446\u043e": {"en": "Face", "ko": "\uc5bc\uad74"}, "\u041b\u044e\u0434\u0435\u0439": {"en": "People", "ko": "\uc0ac\ub78c"}, "\u041a\u0442\u043e \u044d\u0442\u043e": {"en": "Who is", "ko": "\uc778\uc2dd\ub428"}, "\u0423\u0441\u0442\u0430\u043b\u043e\u0441\u0442\u044c": {"en": "Fatigue", "ko": "\ud53c\ub85c\ub3c4"}, "\u0413\u043b\u0430\u0437\u0430": {"en": "Eyes", "ko": "\ub208"}, "\u041c\u043e\u0440\u0433\u0430\u043d\u0438\u044f": {"en": "Blinks", "ko": "\ub208 \uae5c\ube61\uc784"}, "\u0413\u043e\u043b\u043e\u0441": {"en": "Voice", "ko": "\uc74c\uc131"}, "\u0421\u0442\u0440\u0435\u0441\u0441": {"en": "Stress", "ko": "\uc2a4\ud2b8\ub808\uc2a4"}, "\u041a\u043e\u043d\u0442\u0430\u043a\u0442 \u0433\u043b\u0430\u0437": {"en": "Eye Contact", "ko": "\ub208 \ub9de\ucda4"}, "\u0423\u043b\u044b\u0431\u043a\u0430": {"en": "Smile", "ko": "\ubbf8\uc18c"}, "\u0413\u0440\u0443\u0441\u0442\u044c": {"en": "Sad", "ko": "\uc2ac\ud514"}, "\u0417\u043b\u043e\u0441\u0442\u044c": {"en": "Anger", "ko": "\ubd84\ub178"}, "\u0427\u0451\u0442\u043a\u043e\u0441\u0442\u044c \u0440\u0435\u0447\u0438": {"en": "Voice Clarity", "ko": "\uc74c\uc131 \uba85\ud655\ub3c4"}, "\u0422\u0435\u043c\u043f \u0440\u0435\u0447\u0438": {"en": "Speech Rate", "ko": "\ub9d0\ud558\uae30 \uc18d\ub3c4"}, "\u041f\u0443\u043b\u044c\u0441": {"en": "Pulse", "ko": "\ub9e5\ubc15"}, "\u0414\u044b\u0445\u0430\u043d\u0438\u0435": {"en": "Breathing", "ko": "\ud638\ud761"}, "\u041a\u043e\u0436\u0430": {"en": "Skin", "ko": "\ud53c\ubd80"}, "\u0412\u0441\u0435\u0433\u043e \u0441\u0435\u0441\u0441\u0438\u0439": {"en": "Total sessions", "ko": "\uc804\uccb4 \uc138\uc158"}, "\u0421\u0440\u0435\u0434\u043d\u0435\u0435 \u0437\u0430 10 \u0441\u0435\u0441\u0441\u0438\u0439": {"en": "Avg last 10", "ko": "\ud3c9\uade0(\ucd5c\uadfc 10\uac1c)"}, "\u0414\u0430\u0442\u0430 \u0438 \u0432\u0440\u0435\u043c\u044f": {"en": "Date & time", "ko": "\ub0a0\uc9dc & \uc2dc\uac04"}, "\u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u044b \u043b\u0438\u0446\u0430": {"en": "Face Results", "ko": "\uc5bc\uad74 \ubd84\uc11d \uacb0\uacfc"}, "\u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u044b \u0433\u043e\u043b\u043e\u0441\u0430": {"en": "Voice Results", "ko": "\uc74c\uc131 \ubd84\uc11d \uacb0\uacfc"}, "\u0417\u0434\u043e\u0440\u043e\u0432\u044c\u0435 (DOC.FAI.ME)": {"en": "Health (DOC.FAI.ME)", "ko": "\uac74\uac15 (DOC.FAI.ME)"}, "\u0421\u0435\u0441\u0441\u0438\u0438 \u0437\u0430 \u043f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0435 7 \u0434\u043d\u0435\u0439": {"en": "Sessions last 7 days", "ko": "\ucd5c\uadfc 7\uc77c \uc138\uc158"}, "\u0418\u0441\u0442\u043e\u0440\u0438\u044f \u0441\u0435\u0441\u0441\u0438\u0439": {"en": "Session History", "ko": "\uc138\uc158 \uae30\ub85d"}, "\u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c": {"en": "Refresh", "ko": "\uc0c8\ub85c\uace0\uce68"}, "\u041d\u0435\u0442 \u0441\u0435\u0441\u0441\u0438\u0439. \u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433.": {"en": "No sessions. Start monitoring.", "ko": "\uc138\uc158\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \ubaa8\ub2c8\ud130\ub9c1\uc744 \uc2dc\uc791\ud558\uc138\uc694."}, "\u0420\u0430\u0441\u043f\u043e\u0437\u043d\u0430\u0432\u0430\u043d\u0438\u0435 \u043b\u0438\u0446": {"en": "Face Recognition", "ko": "\uc5bc\uad74 \uc778\uc2dd"}, "\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0447\u0435\u043b\u043e\u0432\u0435\u043a\u0430": {"en": "Add Person", "ko": "\uc0ac\ub78c \ucd94\uac00"}, "\u041a\u0430\u043a \u044d\u0442\u043e \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442": {"en": "How it works", "ko": "\uc791\ub3d9 \ubc29\uc2dd"}, "\u041d\u0435\u0442 \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u0445 \u043b\u0438\u0446. \u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u00ab\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0447\u0435\u043b\u043e\u0432\u0435\u043a\u0430\u00bb.": {"en": "No registered faces. Click \"Add Person\".", "ko": "\ub4f1\ub85d\ub41c \uc5bc\uad74\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \"\uc0ac\ub78c \ucd94\uac00\"\ub97c \ud074\ub9ad\ud558\uc138\uc694."}, "\u0420\u0430\u0441\u043f\u043e\u043b\u043e\u0436\u0438\u0442\u0435 \u043b\u0438\u0446\u043e \u0432 \u0446\u0435\u043d\u0442\u0440\u0435 \u043a\u0440\u0443\u0433\u0430": {"en": "Position face in circle center", "ko": "\uc6d0 \uc911\uc2ec\uc5d0 \uc5bc\uad74\uc744 \uc704\uce58\uc2dc\ud0a4\uc138\uc694"}, "\u0421\u043a\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u043b\u0438\u0446\u043e": {"en": "Scan Face", "ko": "\uc5bc\uad74 \uc2a4\uce94"}, "\u041e\u0442\u043c\u0435\u043d\u0430": {"en": "Cancel", "ko": "\ucde8\uc18c"}, "API \u0421\u0435\u0440\u0432\u0435\u0440": {"en": "API Server", "ko": "API \uc11c\ubc84"}, "URL API": {"en": "API URL", "ko": "API URL"}, "\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c": {"en": "Save", "ko": "\uc800\uc7a5"}, "\u041f\u0440\u043e\u0432\u0435\u0440\u0438\u0442\u044c": {"en": "Test", "ko": "\ud14c\uc2a4\ud2b8"}, "\u041a\u0430\u043c\u0435\u0440\u0430 \u0438 \u043c\u0438\u043a\u0440\u043e\u0444\u043e\u043d": {"en": "Camera & Microphone", "ko": "\uce74\uba54\ub77c \ubc0f \ub9c8\uc774\ud06c"}, "\u041f\u0435\u0440\u0435\u0437\u0430\u043f\u0440\u043e\u0441\u0438\u0442\u044c \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043d\u0438\u044f": {"en": "Re-request Permissions", "ko": "\uad8c\ud55c \ub2e4\uc2dc \uc694\uccad"}, "\u0414\u0430\u043d\u043d\u044b\u0435": {"en": "Data", "ko": "\ub370\uc774\ud130"}, "\u042d\u043a\u0441\u043f\u043e\u0440\u0442 \u0434\u0430\u043d\u043d\u044b\u0445": {"en": "Export Data", "ko": "\ub370\uc774\ud130 \ub0b4\ubcf4\ub0b4\uae30"}, "\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u0434\u0430\u043d\u043d\u044b\u0435": {"en": "Clear Data", "ko": "\ub370\uc774\ud130 \uc9c0\uc6b0\uae30"}, "\u041a\u0430\u043c\u0435\u0440\u0430 \u043d\u0435 \u0430\u043a\u0442\u0438\u0432\u043d\u0430": {"en": "Camera inactive", "ko": "\uce74\uba54\ub77c\uac00 \ube44\ud65c\uc131\uc0c1\ud0dc\uc785\ub2c8\ub2e4"}, "\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u00ab\u041d\u0430\u0447\u0430\u0442\u044c \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433\u00bb": {"en": "Click \"Start Monitoring\"", "ko": "\"\ubaa8\ub2c8\ud130\ub9c1 \uc2dc\uc791\"\uc744 \ud074\ub9ad\ud558\uc138\uc694"}, "\u041c\u0435\u0442\u0440\u0438\u043a\u0438 \u043f\u043e \u043b\u044e\u0434\u044f\u043c": {"en": "Person Metrics", "ko": "\uac1c\uc778\ubcc4 \uba54\ud2b8\ub9ad"}, "\u0410\u043d\u0430\u043b\u0438\u0437 \u043a\u043e\u0436\u0438": {"en": "Skin Analysis", "ko": "\ud53c\ubd80 \ubd84\uc11d"}, "\u041e\u0431\u043d\u0430\u0440\u0443\u0436\u0435\u043d\u043d\u044b\u0435 \u0441\u043e\u0441\u0442\u043e\u044f\u043d\u0438\u044f": {"en": "Detected Conditions", "ko": "\uac10\uc9c0\ub41c \uc0c1\ud0dc"}, "\u041b\u043e\u0433 \u0441\u043e\u0431\u044b\u0442\u0438\u0439": {"en": "Event Log", "ko": "\uc774\ubca4\ud2b8 \ub85c\uadf8"}, "\u0421\u0438\u0441\u0442\u0435\u043c\u0430 \u0433\u043e\u0442\u043e\u0432\u0430. \u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u00ab\u041d\u0430\u0447\u0430\u0442\u044c \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433\u00bb.": {"en": "System ready. Click \"Start Monitoring\".", "ko": "\uc2dc\uc2a4\ud15c \uc900\ube44 \uc644\ub8cc. \"\ubaa8\ub2c8\ud130\ub9c1 \uc2dc\uc791\"\uc744 \ud074\ub9ad\ud558\uc138\uc694."}, "\u041e\u0436\u0438\u0434\u0430\u043d\u0438\u0435 \u0434\u0430\u043d\u043d\u044b\u0445...": {"en": "Waiting for data...", "ko": "\ub370\uc774\ud130 \ub300\uae30 \uc911..."}, "\u041d\u0435\u0442 \u0434\u0430\u043d\u043d\u044b\u0445": {"en": "No data", "ko": "\ub370\uc774\ud130 \uc5c6\uc74c"}, "\u041e\u0431\u043d\u0430\u0440\u0443\u0436\u0435\u043d\u043e": {"en": "Detected", "ko": "\uac10\uc9c0\ub428"}, "\u041d\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043d\u044b\u0439": {"en": "Unknown", "ko": "\uc54c \uc218 \uc5c6\uc74c"}};
+
+function t(key) {
+    if (i18nData[key] && i18nData[key][currentLang]) {
+        return i18nData[key][currentLang];
+    }
+    return key;
+}
+
+function changeLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("selectedLanguage", lang);
+    document.documentElement.lang = lang;
+    location.reload();
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("langSelector").value = currentLang;
+});
+</script></body>
+</html>
