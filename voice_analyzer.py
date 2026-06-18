@@ -1,11 +1,3 @@
-"""
-Voice Analyzer Module
-Analyzes audio characteristics to detect:
-- Stress and anxiety (pitch changes, speech rate)
-- Voice quality (loudness, tone)
-- Emotional state through vocal patterns
-"""
-
 import librosa
 import numpy as np
 from collections import deque
