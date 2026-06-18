@@ -1,15 +1,3 @@
-"""
-Database Query Utility
-Allows viewing, analyzing, and exporting monitoring data from the database.
-
-Usage:
-    python query_database.py              # Show menu
-    python query_database.py --sessions   # List all sessions
-    python query_database.py --session 1  # Show session 1 details
-    python query_database.py --report 1   # Generate report for session 1
-    python query_database.py --stats 1    # Show statistics for session 1
-"""
-
 import argparse
 import json
 from datetime import datetime
