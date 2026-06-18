@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Quick Start Validation Script
-Checks if all dependencies are installed and system is ready.
-"""
-
 import sys
 import subprocess
 
