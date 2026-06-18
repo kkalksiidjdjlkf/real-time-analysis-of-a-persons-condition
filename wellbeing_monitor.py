@@ -1,13 +1,3 @@
-"""
-Wellbeing Monitor Coordinator
-Aggregates data from all analyzers and generates wellness recommendations.
-
-This module:
-- Collects results from face, voice, and breathing analyzers
-- Combines findings into an overall wellness score
-- Generates personalized, non-medical recommendations
-- Tracks patterns over monitoring sessions
-"""
 
 import numpy as np
 from datetime import datetime
